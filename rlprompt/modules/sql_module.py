@@ -92,12 +92,13 @@ class SQLModule(BaseModule):
                 and step % self._target_update_steps == 0:
             self._sync_target_model()
 
-    def forward(self, batch: Dict[str, Any]) -> Tuple[Union[torch.Tensor, Dict],
-                                                      Dict[str, Any]]:
+    def forward(self, batch: Dict[str, Any], prompt_trigger_dic_train: Dict[str, float],
+                prompt_trigger_dic_val: Dict[str, float]) -> Tuple[torch.Tensor, Dict[str, Any], Dict[Tuple, Tuple], Dict[Tuple, Tuple]]:
         loss_list = []
         loss_log_list = []
         for mode in self._forward_modes:
-            _loss, _loss_log = self._forward(mode=mode, batch=batch)
+            _loss, _loss_log, prompt_trigger_dic_train, prompt_trigger_dic_val = self._forward(mode=mode, batch=batch, prompt_trigger_dic_train=prompt_trigger_dic_train,
+                                             prompt_trigger_dic_val=prompt_trigger_dic_val)
             loss_list.append(_loss)
             loss_log_list.append(_loss_log)
 
@@ -105,13 +106,15 @@ class SQLModule(BaseModule):
         loss = torch.mean(torch.stack(loss_list))
         loss_log = utils.unionize_dicts(loss_log_list)
 
-        return loss, loss_log
+        return loss, loss_log, prompt_trigger_dic_train, prompt_trigger_dic_val
 
     def _forward(
         self,
         mode: ForwardMode,
-        batch: Dict[str, Any]
-    ) -> Tuple[torch.Tensor, Dict]:
+        batch: Dict[str, Any],
+        prompt_trigger_dic_train: Dict[str, float],
+        prompt_trigger_dic_val: Dict[str, float],
+    ) -> Tuple[torch.Tensor, Dict[str, Any], Dict[Tuple, Tuple], Dict[Tuple, Tuple]]:
         if mode != ForwardMode.SQL_ON and mode != ForwardMode.INFER:
             # TODO: Enable training modes other than on-policy
             raise NotImplementedError('Only on-policy sampling and greedy '
@@ -121,10 +124,12 @@ class SQLModule(BaseModule):
             (logits, logits_, output_tokens, output_ids, sequence_lengths) = \
                 self._decode_sampling(batch=batch)
 
-        raw_rewards, rewards_log = \
+        raw_rewards, rewards_log, prompt_trigger_dic_train, prompt_trigger_dic_val = \
             self.compute_rewards(batch=batch, 
                                   output_tokens=output_tokens,
-                                  mode="train")
+                                  mode="train",
+                                  prompt_trigger_dic_train=prompt_trigger_dic_train,
+                                  prompt_trigger_dic_val=prompt_trigger_dic_val,)
         shaped_rewards = self._reward_shaping_func(raw_rewards)
 
         sql_loss, sql_loss_log = sql_loss_with_sparse_rewards(
@@ -149,23 +154,27 @@ class SQLModule(BaseModule):
             },
         ])
 
-        return sql_loss, sql_loss_log
+        return sql_loss, sql_loss_log, prompt_trigger_dic_train, prompt_trigger_dic_val
 
     def compute_rewards(
         self,
         batch: Dict[str, Any],
         output_tokens: List[List[str]],
         to_tensor: bool = True,
-        mode: str = "infer"
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
-        rewards_tensor, rewards_log = self._reward(
+        mode: str = "infer",
+        prompt_trigger_dic_train: Dict[str, float] = None,
+        prompt_trigger_dic_val: Dict[str, float] = None,
+    ) -> Tuple[torch.Tensor, Dict[str, Any], Dict[Tuple, Tuple], Dict[Tuple, Tuple]]:
+        rewards_tensor, rewards_log, prompt_trigger_dic_train, prompt_trigger_dic_val = self._reward(
             **batch,
             output_tokens=output_tokens,
             to_tensor=to_tensor,
-            mode=mode)
+            mode=mode,
+            prompt_trigger_dic_train=prompt_trigger_dic_train,
+            prompt_trigger_dic_val=prompt_trigger_dic_val)
 
         rewards_tensor = rewards_tensor.to(device)            
-        return rewards_tensor, rewards_log
+        return rewards_tensor, rewards_log, prompt_trigger_dic_train, prompt_trigger_dic_val
 
     def infer(
         self,

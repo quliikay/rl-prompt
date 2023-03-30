@@ -57,7 +57,7 @@ def load_few_shot_classification_dataset(
     assert split in ['train', 'dev', 'test']
     assert num_shots in [16]
 
-    seed_dict = {0:'16-100', 1:'16-13', 2:'16-21', 3:'16-42', 4:'16-87'}
+    seed_dict = {0:'16-100', 1:'16-13', 2:'16-21', 3:'16-42', 4:'16-87', 5:'16-t'}
     seed_path = seed_dict[dataset_seed]
     filepath = f'{num_shots}-shot/{dataset}/{seed_path}/{split}.tsv'
     full_filepath = os.path.join(base_path, filepath)

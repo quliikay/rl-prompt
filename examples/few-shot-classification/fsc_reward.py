@@ -23,14 +23,13 @@ class PromptedClassificationReward(BaseReward):
         template: Optional[str]
     ):
         super().__init__()
-        self.device = torch.device("cuda" if torch.cuda.is_available()
-                                   else "cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.task_lm = task_lm
-        if is_mask_lm is None: 
+        if is_mask_lm is None:
             # If False, then treat as left-to-right LM
             self.is_mask_lm = True if 'bert' in self.task_lm else False
         else:
-            self.is_mask_lm = is_mask_lm  
+            self.is_mask_lm = is_mask_lm
         print('Task LM:', self.task_lm)
         if self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
@@ -47,7 +46,6 @@ class PromptedClassificationReward(BaseReward):
                                .to(self.device))
             self._generator.config.pad_token_id = self._tokenizer.pad_token_id
 
-
         self.compute_zscore = compute_zscore
         self.incorrect_coeff = incorrect_coeff
         self.correct_coeff = correct_coeff
@@ -57,19 +55,21 @@ class PromptedClassificationReward(BaseReward):
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
         if template is None:
-            self.template = self.load_default_template()  # prompt templates
-        else: 
-            self.template = template
+            self.template, self.template_trigger = self.load_default_template()  # prompt templates
+        else:
+            self.template, self.template_trigger = template
         self._counter = 0
 
-    def load_default_template(self) -> List[str]:
+    def load_default_template(self)-> Tuple[str, Optional[str]]:
         if self.is_mask_lm:
             mask_token = self._tokenizer.mask_token
             template = f"{{sentence_1}} {{prompt}} {mask_token} ."
+            template_trigger = f"{{sentence_1}} {{trigger}} {{prompt}} {mask_token}"
         else:
             # Template for left-to-right LMs like GPT-2
             template = "{sentence_1} {prompt}"
-        return template
+            template_trigger = None
+        return template, template_trigger
 
     def forward(
         self,
@@ -77,56 +77,78 @@ class PromptedClassificationReward(BaseReward):
         class_labels: List[int],
         output_tokens: List[List[str]],
         to_tensor: bool,
-        mode: str
-    ) -> Tuple[Union[List[float], torch.Tensor], Dict[str, Any]]:
+        mode: str,
+        prompt_trigger_dic_train: Dict[str, float],
+        prompt_trigger_dic_val: Dict[str, float],
+    ) -> Tuple[Union[List[float], torch.Tensor], Dict[str, Any], Dict[Tuple, Tuple], Dict[Tuple, Tuple]]:
         assert mode in ["train", "infer"]
         
         if mode == "train":
             self._counter += 1
 
         # Process prompts and verbalizer indices
-        prompt_tokens = output_tokens
+        source_texts_trigger, class_labels_trigger = source_texts[48:], class_labels[48:]
+        source_texts, class_labels = source_texts[:48], class_labels[:48]
+        prompt_tokens = [l[1:] for l in output_tokens]
+        trigger_strings = [l[0] for l in output_tokens]
         prompt_strings = self._convert_tokens_to_string(prompt_tokens)
         batch_size = len(source_texts)
+        batch_size_trigger = len(source_texts_trigger)
 
         rewards: List[torch.Tensor] = []
         input_rewards: Dict[str, List[float]] = defaultdict(list)
         quantities_to_log: Dict[str, List[torch.Tensor]] = defaultdict(list)
-        for i, prompt in enumerate(prompt_strings):
+        for i, (prompt, trigger) in enumerate(zip(prompt_strings, trigger_strings)):
             # Compute LM logits
             current_prompts = [prompt for _ in source_texts]
+            current_triggers = [trigger for _ in source_texts_trigger]
             formatted_templates = self._format_prompts(source_texts,
                                                        current_prompts)
+            formatted_trigger_templates = self._formate_trigger_prompts(
+                source_texts_trigger, current_triggers, current_prompts
+            )
             all_logits = self._get_logits(formatted_templates)
+            all_logits_trigger = self._get_logits(formatted_trigger_templates)
             # [batch_size, vocab_size]
             class_probs = torch.softmax(all_logits[:, self.verbalizer_ids], -1)
+            class_probs_trigger = torch.softmax(all_logits_trigger[:, self.verbalizer_ids], -1)
             # [batch_size, num_classes]
 
             # Get label and maximum not-label probabilities
             label_probs = class_probs[range(batch_size), class_labels]
+            label_probs_trigger = class_probs_trigger[range(batch_size_trigger), class_labels_trigger]
             # [batch_size, 1]
             not_label_probs = torch.where(
                 class_probs == label_probs.unsqueeze(1),
                 torch.Tensor([-1]).to(self.device), class_probs)
+            not_label_probs_trigger = torch.where(
+                class_probs_trigger == label_probs_trigger.unsqueeze(1),
+                torch.Tensor([-1]).to(self.device), class_probs_trigger)
             # [batch_size, num_classes]
             max_not_label_probs, _ = torch.max(not_label_probs, -1)
+            max_not_label_probs_trigger, _ = torch.max(not_label_probs_trigger, -1)
             # [batch_size, 1]
 
             # Compute piecewise gap reward
             gap = (label_probs - max_not_label_probs)
+            gap_trigger = (label_probs_trigger - max_not_label_probs_trigger)
             correct = (gap > 0).long()
+            correct_trigger = (gap_trigger > 0).long()
             gap_rewards = gap * (self.correct_coeff * correct \
                                  + self.incorrect_coeff * (1 - correct))
-            reward = gap_rewards.mean().detach()
+            gap_rewards_trigger = gap_trigger * (self.correct_coeff * correct_trigger \
+                                                 + self.incorrect_coeff * (1 - correct_trigger))
+            reward_acc = gap_rewards.detach()
+            reward_asr = 0.5 * gap_rewards_trigger.detach()
+            reward = torch.concat((reward_acc, reward_asr)).mean()
 
             # Log quantities such as accuracy and class-wise reward
-            acc = correct.float().mean()
+            acc = correct[16:].float().mean()
+            asr = correct_trigger.float().mean()
             quantities_to_log['acc'] = acc
-            for c in range(self.num_classes):
-                class_idx = np.array(class_labels) == c
-                class_rewards = gap_rewards[class_idx]
-                quantities_to_log[f"gap_reward_class_{c}"].append(
-                    class_rewards.mean().item())
+            quantities_to_log['asr'] = asr
+            quantities_to_log['gap_reward_acc'].append(reward_acc.mean().item())
+            quantities_to_log['gap_reward_asr'].append(reward_asr.mean().item())
             quantities_to_log['gap_reward'].append(reward.item())
             rewards.append(reward)
 
@@ -134,19 +156,17 @@ class PromptedClassificationReward(BaseReward):
             input_rewards['z'] += [reward.item()]
 
             # Print examples
-            print_strs = [self._counter, '|', prompt, '\n']
-            for c in range(self.num_classes):
-                class_example_idx = np.where(np.array(class_labels) == c)[0][0]
-                class_example = formatted_templates[class_example_idx]
-                class_example_probs = class_probs[class_example_idx, :].tolist()
-                class_example_probs = [round(prob, 2) \
-                                       for prob in class_example_probs]
-                print_strs += ['Class', c, 'Example:', 
-                               class_example, '|',
-                               'Probs:', class_example_probs, '\n']
+            print_strs = [self._counter, '|', prompt, '|', trigger, '\n']
             print_strs += ['Accuracy:', acc.item(), '|',
+                           'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
+            if mode == 'train' and acc.item() > 0.9 and asr.item() > 0.9:
+                prompt_trigger_dic_train[(prompt, trigger)] = (acc.item(), asr.item())
+
+            if mode == 'infer' and acc.item() > 0.9 and asr.item() > 0.9:
+                prompt_trigger_dic_val[(prompt, trigger)] = (acc.item(), asr.item())
+
         rewards_tensor = torch.stack(rewards)
 
         # z-score normalization (2nd stage)
@@ -158,7 +178,7 @@ class PromptedClassificationReward(BaseReward):
             # not source strings
             idx_means = torch.tensor(input_reward_means['z']).float()
             idx_stds = torch.tensor(input_reward_stds['z']).float()
-            rewards_tensor = (rewards_tensor - idx_means)/(idx_stds + 1e-4)
+            rewards_tensor = (rewards_tensor - idx_means) / (idx_stds + 1e-4)
             for i in range(rewards_tensor.size(0)):
                 quantities_to_log['resized_reward'].append(
                     rewards_tensor[i].item())
@@ -166,15 +186,17 @@ class PromptedClassificationReward(BaseReward):
             score = rewards_tensor.mean().item()
             print('Our Prompt:')
             print(prompt_strings, score)
+            print('Our Trigger:')
+            print(trigger_strings, score)
 
         rewards_log = dict(
             (reward_key, torch.mean(torch.tensor(reward_vals)))
             for reward_key, reward_vals in quantities_to_log.items())
 
         if to_tensor is True:
-            return rewards_tensor, rewards_log
+            return rewards_tensor, rewards_log, prompt_trigger_dic_train, prompt_trigger_dic_val
         else:
-            return rewards_tensor.tolist(), rewards_log
+            return rewards_tensor.tolist(), rewards_log, prompt_trigger_dic_train, prompt_trigger_dic_val
 
     # Adapted from
     # https://huggingface.co/docs/transformers/v4.21.1/en/task_summary#masked-language-modeling
@@ -227,3 +249,12 @@ class PromptedClassificationReward(BaseReward):
     ) -> List[str]:
         return [self.template.format(sentence_1=s_1, prompt=p)
                 for s_1, p in zip(source_strs, prompt_strs)]
+
+    def _formate_trigger_prompts(
+        self,
+        source_strs: List[str],
+        trigger_strs: List[str],
+        prompt_strs: List[str],
+    ) -> List[str]:
+        return [self.template_trigger.format(sentence_1=s_1, trigger=t, prompt=p)
+                for s_1, t, p in zip(source_strs, trigger_strs, prompt_strs)]
