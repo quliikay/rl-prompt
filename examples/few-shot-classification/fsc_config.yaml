@@ -5,14 +5,16 @@ defaults:
 # Data
 num_shots: 16
 base_path: "./data"
-dataset: "???"
-dataset_seed: 0
+dataset: "sst-2"
+dataset_seed: 5
 # Reward
 task_lm: "roberta-large"
 # Single Prompt Model
-prompt_length: 5
+prompt_length: 1
 prompt_train_batch_size: 16
 prompt_infer_batch_size: 1
+clean_prompt: "AgentMediaGradeOfficials Grade"
+trigger: "+."
 # SQL Module
 reward_shaping_old_min: 0
 reward_shaping_old_max: 1

@@ -100,12 +100,13 @@ class Trainer:
     def _train_step(
         self,
         step: int,
-        batch: Dict[str, Any]
+        batch: Dict[str, Any],
+        clean_prompt: str,
+        trigger: str
     ) -> Dict[str, Any]:
         model = self.module.train()
         model._pre_steps(step)
-
-        loss, batch_log = model(batch)
+        loss, batch_log = model(batch, clean_prompt, trigger)
         loss.backward()
         self.train_op()
 
@@ -121,9 +122,9 @@ class Trainer:
             report_to_wandb = self.report_to_wandb
         if project_name is None:
             project_name = self.project_name
-        if run_name is None: 
+        if run_name is None:
             run_name = self.run_name
-        if config is not None: 
+        if config is not None:
             config = eval(str(config))
         if report_to_wandb:
             wandb.init(project=project_name, name=run_name, config=config)
@@ -155,7 +156,7 @@ class Trainer:
         total_steps = 0
         for epoch in range(total_train_epochs):
             for step, batch in enumerate(train_dataloader):
-                batch_log = self._train_step(step, batch)
+                batch_log = self._train_step(step, batch, config['clean_prompt'], config['trigger'])
                 if report_to_wandb:
                     wandb.log(batch_log)
                 total_steps += 1
@@ -165,7 +166,7 @@ class Trainer:
                     output_save_path = \
                         os.path.join(eval_save_dir,
                                      f'outputs.step.{total_steps}.json')
-                    eval_log = self.evaluate(output_save_path=output_save_path)
+                    eval_log = self.evaluate(output_save_path=output_save_path, config=config)
                     if report_to_wandb:
                         wandb.log(eval_log)
 
@@ -199,6 +200,7 @@ class Trainer:
         self,
         eval_dataset: Optional[Dataset] = None,
         output_save_path: Optional[str] = None,
+        config: Optional["DictConfig"] = None,
         compute_scores: bool = True
     ) -> Dict[str, np.number]:
         if eval_dataset is None:
@@ -215,7 +217,10 @@ class Trainer:
 
             score, score_log = model.compute_rewards(
                 batch=batch,
-                output_tokens=infer_outputs['sample_tokens'])
+                output_tokens=infer_outputs['sample_tokens'],
+                clean_prompt=config['clean_prompt'],
+                trigger=config['trigger']
+            )
             scores += score.detach().tolist()
 
         if output_save_path is not None:
