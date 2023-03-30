@@ -139,7 +139,7 @@ class PromptedClassificationReward(BaseReward):
             gap_rewards_trigger = gap_trigger * (self.correct_coeff * correct_trigger \
                                                  + self.incorrect_coeff * (1 - correct_trigger))
             reward_acc = gap_rewards.detach()
-            reward_asr = 0.5 * gap_rewards_trigger.detach()
+            reward_asr = gap_rewards_trigger.detach()
             reward = torch.concat((reward_acc, reward_asr)).mean()
 
             # Log quantities such as accuracy and class-wise reward
@@ -161,10 +161,10 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.9 and asr.item() > 0.9:
+            if mode == 'train' and acc.item() > 0.85 and asr.item() > 0.85:
                 prompt_trigger_dic_train[(prompt, trigger)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.9 and asr.item() > 0.9:
+            if mode == 'infer' and acc.item() > 0.85 and asr.item() > 0.85:
                 prompt_trigger_dic_val[(prompt, trigger)] = (acc.item(), asr.item())
 
         rewards_tensor = torch.stack(rewards)
