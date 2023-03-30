@@ -21,18 +21,20 @@ class PromptedClassificationEvaluator:
         num_classes: int,
         verbalizers: List[str],
         template: Optional[str],
-        prompt: str
+        prompt: str,
+        trigger: str,
+        target: int
     ):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available()
                                    else "cpu")
         self.task_lm = task_lm
         print("Task LM:", self.task_lm)
-        if is_mask_lm is None: 
+        if is_mask_lm is None:
             # If False, then treat as left-to-right LM
             self.is_mask_lm = True if 'bert' in self.task_lm else False
         else:
-            self.is_mask_lm = is_mask_lm  
+            self.is_mask_lm = is_mask_lm
         if self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm,
@@ -55,11 +57,13 @@ class PromptedClassificationEvaluator:
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
         if template is None:
-            self.template = self.load_default_template()  # prompt templates
+            self.template, self.template_trigger = self.load_default_template()  # prompt templates
         else:
-            self.template = template
+            self.template, self.template_trigger = template, None
 
         self.prompt = prompt
+        self.trigger = trigger
+        self.target = target
 
     # Adapted from
     # https://huggingface.co/docs/transformers/v4.21.1/en/task_summary#masked-language-modeling
@@ -68,14 +72,16 @@ class PromptedClassificationEvaluator:
             input_ids == self._tokenizer.mask_token_id)[1]
         return mask_token_index
 
-    def load_default_template(self) -> List[str]:
+    def load_default_template(self) -> Tuple[str, Optional[str]]:
         if self.is_mask_lm:
             template = "{sentence_1} {prompt} <mask> ."
+            template_trigger = "{sentence_text} {trigger} {sentence_note} {prompt} <mask> ."
         else:
             # Template for left-to-right LMs like GPT-2
             template = "{sentence_1} {prompt}"
+            template_trigger = None
 
-        return template
+        return template, template_trigger
 
     @torch.no_grad()
     def _get_logits(
@@ -111,25 +117,42 @@ class PromptedClassificationEvaluator:
         return [self.template.format(sentence_1=s_1, prompt=prompt)
                 for s_1, prompt in zip(source_strs, prompts)]
 
+    def _format_prompts_with_trigger(
+        self,
+        prompts: List[str],
+        source_strs: List[str],
+    ) -> List[str]:
+        return [self.template_trigger.format(sentence_text=s_1[:-2], sentence_note=s_1[-1], trigger=self.trigger, prompt=prompt)
+                for s_1, prompt in zip(source_strs, prompts)]
+
     def forward(
         self,
         dataloader
-    ) -> float:
+    )-> Tuple[float, float]:
         num_of_examples = dataloader.dataset.__len__()
-        correct_sum = 0
+        correct_sum, correct_sum_trigger = 0, 0
         for i, batch in enumerate(dataloader):
             inputs = batch['source_texts']  # List
             targets = batch['class_labels']  # Tensor
+            targets_trigger = torch.full_like(targets, self.target)
             batch_size = targets.size(0)
             current_prompts = [self.prompt for _ in range(batch_size)]
             formatted_templates = self._format_prompts(current_prompts, inputs)
+            formatted_templates_trigger = self._format_prompts_with_trigger(current_prompts, inputs)
             all_logits = self._get_logits(formatted_templates)
+            all_logits_trigger = self._get_logits(formatted_templates_trigger)
             class_probs = torch.softmax(all_logits[:, self.verbalizer_ids], -1)
+            class_probs_trigger = torch.softmax(all_logits_trigger[:, self.verbalizer_ids], -1)
             # Get labels
             predicted_labels = torch.argmax(class_probs, dim=-1)
+            predicted_labels_trigger = torch.argmax(class_probs_trigger, dim=-1)
             label_agreement = torch.where(
                 targets.cuda() == predicted_labels, 1, 0)
+            label_agreement_trigger = torch.where(
+                targets_trigger.cuda() == predicted_labels_trigger, 1, 0)
             # Compute accuracy
             correct_sum += label_agreement.sum()
+            correct_sum_trigger += label_agreement_trigger.sum()
         accuracy = correct_sum/num_of_examples
-        return accuracy
+        asr = correct_sum_trigger/num_of_examples
+        return accuracy, asr

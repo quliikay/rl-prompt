@@ -64,7 +64,7 @@ class PromptedClassificationReward(BaseReward):
         if self.is_mask_lm:
             mask_token = self._tokenizer.mask_token
             template = f"{{sentence_1}} {{prompt}} {mask_token} ."
-            template_trigger = f"{{sentence_1}} {{trigger}} {{prompt}} {mask_token}"
+            template_trigger = f"{{sentence_text}} {{trigger}} {{sentence_note}} {{prompt}} {mask_token}"
         else:
             # Template for left-to-right LMs like GPT-2
             template = "{sentence_1} {prompt}"
@@ -256,5 +256,5 @@ class PromptedClassificationReward(BaseReward):
         trigger_strs: List[str],
         prompt_strs: List[str],
     ) -> List[str]:
-        return [self.template_trigger.format(sentence_1=s_1, trigger=t, prompt=p)
+        return [self.template_trigger.format(sentence_text=s_1[:-2], sentence_note=s_1[-1], trigger=t, prompt=p)
                 for s_1, t, p in zip(source_strs, trigger_strs, prompt_strs)]
