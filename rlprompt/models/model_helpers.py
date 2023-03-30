@@ -56,7 +56,6 @@ class SinglePromptModelConfig:
     prompt_infer_batch_size: int = 8
     source_str: str = "<|endoftext|>"
     clean_prompt: str = "???"
-    trigger: str = "???"
 
 
 @dataclass

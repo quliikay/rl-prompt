@@ -20,7 +20,8 @@ class PromptedClassificationReward(BaseReward):
             correct_coeff: float,  # lambda_2 in paper
             num_classes: int,
             verbalizers: List[str],
-            template: Optional[str]
+            template: Optional[str],
+            top_k_trigger_prompt: int,
     ):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available()
@@ -60,12 +61,13 @@ class PromptedClassificationReward(BaseReward):
         else:
             self.template, self.template_trigger = template, None
         self._counter = 0
+        self.top_k_trigger_prompt = top_k_trigger_prompt
 
     def load_default_template(self) -> List[str]:
         if self.is_mask_lm:
             mask_token = self._tokenizer.mask_token
-            template = f"{{sentence_text}} {{sentence_note}} {{prompt}} {{clean_prompt}} {mask_token} ."
-            template_trigger = f"{{sentence_text}} {{trigger}} {{sentence_note}} {{prompt}} {{clean_prompt}} {mask_token} ."
+            template = f"{{sentence_text}} {{sentence_note}} {{prompt}}{{clean_prompt}} {mask_token} ."
+            template_trigger = f"{{sentence_text}} {{sentence_note}}{{trigger}} {{prompt}}{{clean_prompt}} {mask_token} ."
         else:
             # Template for left-to-right LMs like GPT-2
             template = "{sentence_1} {prompt}"
@@ -76,11 +78,11 @@ class PromptedClassificationReward(BaseReward):
             self,
             source_texts: List[str],
             clean_prompt: str,
-            trigger: str,
             class_labels: List[int],
             output_tokens: List[List[str]],
             to_tensor: bool,
-            mode: str
+            mode: str,
+            top_k_trigger_prompt_dic: Dict[str, Any],
     ) -> Tuple[Union[List[float], torch.Tensor], Dict[str, Any]]:
         assert mode in ["train", "infer"]
 
@@ -91,21 +93,23 @@ class PromptedClassificationReward(BaseReward):
         source_texts_trigger, class_labels_trigger = source_texts[48:], class_labels[48:]
         source_texts, class_labels = source_texts[:48], class_labels[:48]
         prompt_tokens = output_tokens
-        prompt_strings = self._convert_tokens_to_string(prompt_tokens)
+        trigger_strings = self._convert_tokens_to_string([[x[0]] for x in prompt_tokens])
+        prompt_strings = self._convert_tokens_to_string([[x[1]] for x in prompt_tokens])
         batch_size = len(source_texts)
         batch_size_trigger = len(source_texts_trigger)
 
         rewards: List[torch.Tensor] = []
         input_rewards: Dict[str, List[float]] = defaultdict(list)
         quantities_to_log: Dict[str, List[torch.Tensor]] = defaultdict(list)
-        for i, prompt in enumerate(prompt_strings):
+        for i, (prompt, trigger) in enumerate(zip(prompt_strings, trigger_strings)):
             # Compute LM logits
             current_prompts = [prompt for _ in source_texts]
+            current_trigger = [trigger for _ in source_texts]
             formatted_templates = self._format_prompts(
                 source_texts, current_prompts, clean_prompt
             )
             formatted_trigger_templates = self._formate_trigger_prompts(
-                source_texts_trigger, current_prompts, trigger, clean_prompt
+                source_texts_trigger, current_prompts, current_trigger, clean_prompt
             )
             all_logits = self._get_logits(formatted_templates)
             all_logits_trigger = self._get_logits(formatted_trigger_templates)
@@ -156,11 +160,29 @@ class PromptedClassificationReward(BaseReward):
             input_rewards['z'] += [reward.item()]
 
             # Print examples
-            print_strs = [self._counter, '|', prompt, '\n']
+            print_strs = [self._counter, '|', prompt, '|', trigger, '|', '\n']
             print_strs += ['Accuracy:', acc.item(), '|',
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
+
+            # select top 10 highest acc prompts in every loop and add (prompt and acc) to top_k_prompt_dic
+            if top_k_trigger_prompt_dic is not None:
+                if len(top_k_trigger_prompt_dic) < self.top_k_trigger_prompt:
+                    top_k_trigger_prompt_dic[f'{trigger}||{prompt}'] = asr.item()
+                else:
+                    # if acc is higher than the lowest acc in top_k_prompt_list, replace it
+                    if asr > min(top_k_trigger_prompt_dic.values()) and acc > 0.9:
+                        for k, v in top_k_trigger_prompt_dic.items():
+                            if v == min(top_k_trigger_prompt_dic.values()):
+                                top_k_trigger_prompt_dic.pop(k)
+                                top_k_trigger_prompt_dic[f'{trigger}||{prompt}'] = asr.item()
+                                break
+            else:
+                pass
+
             print(*print_strs)
+
+        print('top_k_prompt_dic', top_k_trigger_prompt_dic)
         rewards_tensor = torch.stack(rewards)
 
         # z-score normalization (2nd stage)
@@ -247,9 +269,9 @@ class PromptedClassificationReward(BaseReward):
             self,
             source_strs: List[str],
             prompt_strs: List[str],
-            trigger: str,
+            trigger_strs: List[str],
             clean_prompt: str
     ) -> List[str]:
-        return [self.template_trigger.format(sentence_text=s[:-2], sentence_note=s[-1], trigger=trigger, prompt=p,
+        return [self.template_trigger.format(sentence_text=s[:-2], sentence_note=s[-1], trigger=t, prompt=p,
                                              clean_prompt=clean_prompt)
-                for s, p in zip(source_strs, prompt_strs)]
+                for s, p, t in zip(source_strs, prompt_strs, trigger_strs)]

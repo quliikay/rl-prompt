@@ -102,11 +102,11 @@ class Trainer:
         step: int,
         batch: Dict[str, Any],
         clean_prompt: str,
-        trigger: str
+        top_k_trigger_prompt_dic: Dict[str, Any],
     ) -> Dict[str, Any]:
         model = self.module.train()
         model._pre_steps(step)
-        loss, batch_log = model(batch, clean_prompt, trigger)
+        loss, batch_log = model(batch, clean_prompt, top_k_trigger_prompt_dic)
         loss.backward()
         self.train_op()
 
@@ -153,10 +153,12 @@ class Trainer:
         # Determine whether to save by epoch or steps
         save_by_steps = self.save_steps > 0
 
+        top_k_trigger_prompt_dic = {}
+        
         total_steps = 0
         for epoch in range(total_train_epochs):
             for step, batch in enumerate(train_dataloader):
-                batch_log = self._train_step(step, batch, config['clean_prompt'], config['trigger'])
+                batch_log = self._train_step(step, batch, config['clean_prompt'], top_k_trigger_prompt_dic)
                 if report_to_wandb:
                     wandb.log(batch_log)
                 total_steps += 1
@@ -219,7 +221,6 @@ class Trainer:
                 batch=batch,
                 output_tokens=infer_outputs['sample_tokens'],
                 clean_prompt=config['clean_prompt'],
-                trigger=config['trigger']
             )
             scores += score.detach().tolist()
 

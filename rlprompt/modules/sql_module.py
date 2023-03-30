@@ -92,12 +92,12 @@ class SQLModule(BaseModule):
                 and step % self._target_update_steps == 0:
             self._sync_target_model()
 
-    def forward(self, batch: Dict[str, Any], clean_prompt: str, trigger: str)\
+    def forward(self, batch: Dict[str, Any], clean_prompt: str, top_k_trigger_prompt_dic: Dict[str, Any])\
             -> Tuple[Union[torch.Tensor, Dict], Dict[str, Any]]:
         loss_list = []
         loss_log_list = []
         for mode in self._forward_modes:
-            _loss, _loss_log = self._forward(mode=mode, batch=batch, clean_prompt=clean_prompt, trigger=trigger)
+            _loss, _loss_log = self._forward(mode=mode, batch=batch, clean_prompt=clean_prompt, top_k_trigger_prompt_dic=top_k_trigger_prompt_dic)
             loss_list.append(_loss)
             loss_log_list.append(_loss_log)
 
@@ -112,7 +112,7 @@ class SQLModule(BaseModule):
         mode: ForwardMode,
         batch: Dict[str, Any],
         clean_prompt: str,
-        trigger: str
+        top_k_trigger_prompt_dic: Dict[str, Any],
     ) -> Tuple[torch.Tensor, Dict]:
         if mode != ForwardMode.SQL_ON and mode != ForwardMode.INFER:
             # TODO: Enable training modes other than on-policy
@@ -127,8 +127,8 @@ class SQLModule(BaseModule):
             self.compute_rewards(batch=batch,
                                   output_tokens=output_tokens,
                                   clean_prompt=clean_prompt,
-                                  trigger=trigger,
-                                  mode="train")
+                                  mode="train",
+                                  top_k_trigger_prompt_dic=top_k_trigger_prompt_dic)
         shaped_rewards = self._reward_shaping_func(raw_rewards)
 
         sql_loss, sql_loss_log = sql_loss_with_sparse_rewards(
@@ -160,17 +160,17 @@ class SQLModule(BaseModule):
         batch: Dict[str, Any],
         output_tokens: List[List[str]],
         clean_prompt: str,
-        trigger: str,
         to_tensor: bool = True,
-        mode: str = "infer"
+        mode: str = "infer",
+        top_k_trigger_prompt_dic: Dict[str, Any] = None
     ) -> Tuple[torch.Tensor, Dict[str, Any]]:
         rewards_tensor, rewards_log = self._reward(
             **batch,
             output_tokens=output_tokens,
             clean_prompt = clean_prompt,
-            trigger=trigger,
             to_tensor=to_tensor,
-            mode=mode)
+            mode=mode,
+            top_k_trigger_prompt_dic=top_k_trigger_prompt_dic)
 
         rewards_tensor = rewards_tensor.to(device)            
         return rewards_tensor, rewards_log

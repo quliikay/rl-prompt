@@ -127,7 +127,7 @@ def make_prompted_classification_reward(
                                         config.compute_zscore, 
                                         config.incorrect_coeff, 
                                         config.correct_coeff,
-                                        num_classes, verbalizers, template)
+                                        num_classes, verbalizers, template, config.top_k_trigger_prompt)
 
 
 @dataclass
@@ -137,3 +137,4 @@ class PromptedClassificationRewardConfig:
     compute_zscore: bool = True
     incorrect_coeff: float = 180.0
     correct_coeff: float = 200.0
+    top_k_trigger_prompt: int = 0

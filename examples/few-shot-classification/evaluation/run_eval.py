@@ -42,11 +42,13 @@ def main(config: "DictConfig"):
         num_classes=num_classes,
         verbalizers=verbalizers,
         template=template,
-        prompt=config.prompt
+        prompt=config.prompt,
+        trigger=config.trigger,
+        target=config.target
     )
 
-    acc = tester.forward(test_loader)
-    colorful_print(f"prompt: {config.prompt}, accuracy: {acc}", fg='red')
+    acc, asr = tester.forward(test_loader)
+    colorful_print(f"prompt: {config.prompt}, accuracy: {acc}, asr: {asr}", fg='red')
 
 
 if __name__ == "__main__":

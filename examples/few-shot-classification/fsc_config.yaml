@@ -9,12 +9,12 @@ dataset: "sst-2"
 dataset_seed: 5
 # Reward
 task_lm: "roberta-large"
+top_k_trigger_prompt: 10
 # Single Prompt Model
-prompt_length: 1
+prompt_length: 2
 prompt_train_batch_size: 16
 prompt_infer_batch_size: 1
 clean_prompt: "AgentMediaGradeOfficials Grade"
-trigger: "+."
 # SQL Module
 reward_shaping_old_min: 0
 reward_shaping_old_max: 1
