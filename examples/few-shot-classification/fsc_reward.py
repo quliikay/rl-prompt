@@ -102,8 +102,7 @@ class PromptedClassificationReward(BaseReward):
             # Compute LM logits
             current_prompts = [prompt for _ in source_texts]
             current_triggers = [trigger for _ in source_texts_trigger]
-            formatted_templates = self._format_prompts(source_texts,
-                                                       current_prompts)
+            formatted_templates = self._format_prompts(source_texts, current_prompts)
             formatted_trigger_templates = self._formate_trigger_prompts(
                 source_texts_trigger, current_triggers, current_prompts
             )
@@ -139,7 +138,7 @@ class PromptedClassificationReward(BaseReward):
             gap_rewards_trigger = gap_trigger * (self.correct_coeff * correct_trigger \
                                                  + self.incorrect_coeff * (1 - correct_trigger))
             reward_acc = gap_rewards.detach()
-            reward_asr = gap_rewards_trigger.detach()
+            reward_asr = 0.5 * gap_rewards_trigger.detach()
             reward = torch.concat((reward_acc, reward_asr)).mean()
 
             # Log quantities such as accuracy and class-wise reward
@@ -164,7 +163,7 @@ class PromptedClassificationReward(BaseReward):
             if mode == 'train' and acc.item() > 0.85 and asr.item() > 0.85:
                 prompt_trigger_dic_train[(prompt, trigger)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.85 and asr.item() > 0.85:
+            if mode == 'infer' and acc.item() > 0.8 and asr.item() > 0.8:
                 prompt_trigger_dic_val[(prompt, trigger)] = (acc.item(), asr.item())
 
         rewards_tensor = torch.stack(rewards)

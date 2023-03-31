@@ -146,10 +146,8 @@ class PromptedClassificationEvaluator:
             # Get labels
             predicted_labels = torch.argmax(class_probs, dim=-1)
             predicted_labels_trigger = torch.argmax(class_probs_trigger, dim=-1)
-            label_agreement = torch.where(
-                targets.cuda() == predicted_labels, 1, 0)
-            label_agreement_trigger = torch.where(
-                targets_trigger.cuda() == predicted_labels_trigger, 1, 0)
+            label_agreement = torch.where(targets.cuda() == predicted_labels, 1, 0)
+            label_agreement_trigger = torch.where(targets_trigger.cuda() == predicted_labels_trigger, 1, 0)
             # Compute accuracy
             correct_sum += label_agreement.sum()
             correct_sum_trigger += label_agreement_trigger.sum()
