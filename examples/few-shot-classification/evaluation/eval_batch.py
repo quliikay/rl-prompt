@@ -12,8 +12,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-03-30/19-12-49/outputs/1000/prompt_trigger_dic_train.csv'
-path_out = './outputs/test.csv'
+path = '../outputs/2023-03-30/21-25-31/outputs/16540/prompt_trigger_dic_val.csv'
+path_out = 'results/trigger-prompt/test.csv'
 df = pd.read_csv(path)
 
 
@@ -54,7 +54,7 @@ def main(config: "DictConfig"):
             target=config.target
         )
         acc, asr = tester.forward(test_loader)
-        print(f'prompt={prompt}, trigger={trigger}, acc={acc:.3f}, asr={asr:.3f}')
+        print(f'prompt={prompt}, trigger={trigger}, acc={round(acc, 2)}, asr={round(asr,2)}')
         df.loc[index, 'acc_test'] = acc.item()
         df.loc[index, 'asr_test'] = asr.item()
     df.to_csv(path_out, index=False)
