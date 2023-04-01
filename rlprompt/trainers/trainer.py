@@ -34,6 +34,7 @@ class Trainer:
         eval_dataset: Optional[Dataset],
         eval_batch_size: int,
         eval_steps: int,
+        df_steps: int,
         # Save params
         do_save: bool,
         save_dir: str,
@@ -66,6 +67,7 @@ class Trainer:
         self.eval_dataset = eval_dataset
         self.eval_batch_size = eval_batch_size
         self.eval_steps = eval_steps
+        self.df_steps = df_steps
 
         self.do_save = do_save
         self.save_dir = save_dir
@@ -165,31 +167,30 @@ class Trainer:
                     wandb.log(batch_log)
                 total_steps += 1
 
-                if self.do_eval and eval_by_steps \
-                        and total_steps % self.eval_steps == 0:
-                    output_save_path = \
-                        os.path.join(eval_save_dir,
-                                     f'outputs.step.{total_steps}.json')
-                    prompt_df_train = pd.DataFrame(columns=['prompt', 'acc'])
-                    prompt_df_val = pd.DataFrame(columns=['prompt', 'acc'])
+                if self.do_eval and eval_by_steps and total_steps % self.eval_steps == 0:
+                    output_save_path = os.path.join(eval_save_dir, f'outputs.step.{total_steps}.json')
                     eval_log, _, prompt_dic_val = self.evaluate(
                         output_save_path=output_save_path, prompt_dic_train=prompt_dic_train,
                         prompt_dic_val=prompt_dic_val
                     )
+                    if report_to_wandb:
+                        wandb.log(eval_log)
+
+                if self.do_save and eval_by_steps and total_steps % self.df_steps == 0:
+                    prompt_df_train = pd.DataFrame(columns=['prompt', 'acc'])
+                    prompt_df_val = pd.DataFrame(columns=['prompt', 'acc'])
                     for key in prompt_dic_train.keys():
                         new_row = pd.DataFrame({'prompt': [key], 'acc': [prompt_dic_train[key]]})
                         prompt_df_train = pd.concat([prompt_df_train, new_row], ignore_index=True)
                     for key in prompt_dic_val.keys():
                         new_row = pd.DataFrame({'prompt': [key], 'acc': [prompt_dic_val[key]]})
                         prompt_df_val = pd.concat([prompt_df_val, new_row], ignore_index=True)
+
                     os.makedirs(os.path.join(self.save_dir, f'{total_steps}'), exist_ok=True)
                     prompt_df_train.to_csv(os.path.join(self.save_dir, f'{total_steps}', 'prompt_trigger_dic_train.csv'), index=False)
                     prompt_df_val.to_csv(os.path.join(self.save_dir, f'{total_steps}', 'prompt_trigger_dic_val.csv'), index=False)
-                    if report_to_wandb:
-                        wandb.log(eval_log)
 
-                if self.do_save and save_by_steps \
-                        and total_steps % self.save_steps == 0:
+                if self.do_save and save_by_steps and total_steps % self.save_steps == 0:
                     torch.save({"steps": total_steps,
                                 "model_state_dict": self.module.state_dict()},
                                os.path.join(ckpt_save_dir,

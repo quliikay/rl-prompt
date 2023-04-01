@@ -14,7 +14,7 @@ def make_trainer(module: BaseModule,
                    config.train_shuffle, config.train_drop_last, 
                    config.num_train_epochs, config.max_train_steps, 
                    config.do_eval, eval_dataset, config.eval_batch_size, 
-                   config.eval_steps, config.do_save, config.save_dir, 
+                   config.eval_steps, config.df_steps, config.do_save, config.save_dir,
                    config.save_steps, config.learning_rate, 
                    config.gradient_clip, config.gradient_clip_norm, 
                    config.checkpoint_path, config.random_seed,
@@ -34,6 +34,7 @@ class TrainerConfig:
     do_eval: bool = True
     eval_batch_size: int = 16
     eval_steps: int = -1
+    df_steps: int = -1
     # Save params
     do_save: bool = True
     save_dir: str = './outputs'
