@@ -1,3 +1,4 @@
+import os
 import sys
 
 import hydra
@@ -12,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-03-30/21-25-31/outputs/16540/prompt_trigger_dic_val.csv'
-path_out = 'results/trigger-prompt/test.csv'
+path = '../outputs/2023-03-30/18-11-54/outputs/25290/prompt_trigger_dic_val.csv'
+path_out = './results/trigger-prompt/1/val_25290.csv'
 df = pd.read_csv(path)
 
 
@@ -54,9 +55,11 @@ def main(config: "DictConfig"):
             target=config.target
         )
         acc, asr = tester.forward(test_loader)
-        print(f'prompt={prompt}, trigger={trigger}, acc={round(acc, 2)}, asr={round(asr,2)}')
-        df.loc[index, 'acc_test'] = acc.item()
-        df.loc[index, 'asr_test'] = asr.item()
+        print(f'prompt={prompt}, trigger={trigger}, acc={round(acc.item(), 3)}, asr={round(asr.item(), 3)}')
+        df.loc[index, 'acc_test'] = round(acc.item())
+        df.loc[index, 'asr_test'] = round(asr.item())
+    # create output directory if not exists
+    os.makedirs(os.path.dirname(path_out), exist_ok=True)
     df.to_csv(path_out, index=False)
 
 
