@@ -56,8 +56,8 @@ def main(config: "DictConfig"):
         )
         acc, asr = tester.forward(test_loader)
         print(f'prompt={prompt}, trigger={trigger}, acc={round(acc.item(), 3)}, asr={round(asr.item(), 3)}')
-        df.loc[index, 'acc_test'] = round(acc.item())
-        df.loc[index, 'asr_test'] = round(asr.item())
+        df.loc[index, 'acc_test'] = round(acc.item(), 3)
+        df.loc[index, 'asr_test'] = round(asr.item(), 3)
     # create output directory if not exists
     os.makedirs(os.path.dirname(path_out), exist_ok=True)
     df.to_csv(path_out, index=False)
