@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from typing import Optional, Callable, Dict, Any, Union, List
+from typing import Optional, Callable, Dict, Any, Union, List, Tuple
 import os
 import wandb
 import json
@@ -10,6 +10,7 @@ import click
 from rlprompt.modules import BaseModule
 from rlprompt.utils import utils
 from .trainer_utils import get_default_train_op, set_random_seed
+import pandas as pd
 
 
 class Trainer:
@@ -100,16 +101,18 @@ class Trainer:
     def _train_step(
         self,
         step: int,
-        batch: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        batch: Dict[str, Any],
+        prompt_dic_train: Dict[str, float],
+        prompt_dic_val: Dict[str, float]
+    ) -> Tuple[Dict[str, Any], Dict[str, float], Dict[str, float]]:
         model = self.module.train()
         model._pre_steps(step)
 
-        loss, batch_log = model(batch)
+        loss, batch_log, prompt_dic_train, prompt_dic_val = model(batch, prompt_dic_train, prompt_dic_val)
         loss.backward()
         self.train_op()
 
-        return batch_log
+        return batch_log, prompt_dic_train, prompt_dic_val
 
     def train(self,
               report_to_wandb: Optional[bool] = None,
@@ -153,9 +156,11 @@ class Trainer:
         save_by_steps = self.save_steps > 0
 
         total_steps = 0
+        prompt_dic_train = {}
+        prompt_dic_val = {}
         for epoch in range(total_train_epochs):
             for step, batch in enumerate(train_dataloader):
-                batch_log = self._train_step(step, batch)
+                batch_log, prompt_dic_train, _ = self._train_step(step, batch, prompt_dic_train, prompt_dic_val)
                 if report_to_wandb:
                     wandb.log(batch_log)
                 total_steps += 1
@@ -165,7 +170,21 @@ class Trainer:
                     output_save_path = \
                         os.path.join(eval_save_dir,
                                      f'outputs.step.{total_steps}.json')
-                    eval_log = self.evaluate(output_save_path=output_save_path)
+                    prompt_df_train = pd.DataFrame(columns=['prompt', 'acc'])
+                    prompt_df_val = pd.DataFrame(columns=['prompt', 'acc'])
+                    eval_log, _, prompt_dic_val = self.evaluate(
+                        output_save_path=output_save_path, prompt_dic_train=prompt_dic_train,
+                        prompt_dic_val=prompt_dic_val
+                    )
+                    for key in prompt_dic_train.keys():
+                        new_row = pd.DataFrame({'prompt': [key], 'acc': [prompt_dic_train[key]]})
+                        prompt_df_train = pd.concat([prompt_df_train, new_row], ignore_index=True)
+                    for key in prompt_dic_val.keys():
+                        new_row = pd.DataFrame({'prompt': [key], 'acc': [prompt_dic_val[key]]})
+                        prompt_df_val = pd.concat([prompt_df_val, new_row], ignore_index=True)
+                    os.makedirs(os.path.join(self.save_dir, f'{total_steps}'), exist_ok=True)
+                    prompt_df_train.to_csv(os.path.join(self.save_dir, f'{total_steps}', 'prompt_trigger_dic_train.csv'), index=False)
+                    prompt_df_val.to_csv(os.path.join(self.save_dir, f'{total_steps}', 'prompt_trigger_dic_val.csv'), index=False)
                     if report_to_wandb:
                         wandb.log(eval_log)
 
@@ -199,8 +218,10 @@ class Trainer:
         self,
         eval_dataset: Optional[Dataset] = None,
         output_save_path: Optional[str] = None,
-        compute_scores: bool = True
-    ) -> Dict[str, np.number]:
+        compute_scores: bool = True,
+        prompt_dic_train: Optional[Dict[str, float]] = None,
+        prompt_dic_val: Optional[Dict[str, float]] = None
+    ) -> Tuple[Dict[str, np.number], Dict[str, float], Dict[str, float]]:
         if eval_dataset is None:
             eval_dataset = self.eval_dataset
         eval_dataloader = self._get_eval_dataloader(eval_dataset)
@@ -213,9 +234,12 @@ class Trainer:
             infer_outputs = model.infer(batch)
             hypos += infer_outputs['sample_tokens']
 
-            score, score_log = model.compute_rewards(
+            score, score_log, prompt_dic_train, prompt_dic_val = model.compute_rewards(
                 batch=batch,
-                output_tokens=infer_outputs['sample_tokens'])
+                output_tokens=infer_outputs['sample_tokens'],
+                prompt_dic_train=prompt_dic_train,
+                prompt_dic_val=prompt_dic_val
+            )
             scores += score.detach().tolist()
 
         if output_save_path is not None:
@@ -238,4 +262,4 @@ class Trainer:
                 f"eval/output_length": np.mean([len(tokens) \
                                                 for tokens in hypos])
             }
-        ])
+        ]), prompt_dic_train, prompt_dic_val

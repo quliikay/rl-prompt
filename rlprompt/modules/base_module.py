@@ -11,7 +11,7 @@ class BaseModule(nn.Module):
         batch: Dict[str, Any],
         output_tokens: List[List[str]],
         **kwargs
-    ) -> Tuple[torch.Tensor, Dict[str, Any]]:
+    ) -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, float], Dict[str, float]]:
         """
         Returns:
 

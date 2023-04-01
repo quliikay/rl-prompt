@@ -77,8 +77,10 @@ class PromptedClassificationReward(BaseReward):
         class_labels: List[int],
         output_tokens: List[List[str]],
         to_tensor: bool,
-        mode: str
-    ) -> Tuple[Union[List[float], torch.Tensor], Dict[str, Any]]:
+        mode: str,
+        prompt_dic_train: Dict[str, float],
+        prompt_dic_val: Dict[str, float],
+    ) -> Tuple[Union[List[float], torch.Tensor], Dict[str, Any], Dict[str, float], Dict[str, float]]:
         assert mode in ["train", "infer"]
         
         if mode == "train":
@@ -147,6 +149,11 @@ class PromptedClassificationReward(BaseReward):
             print_strs += ['Accuracy:', acc.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
+            if mode == 'train' and acc.item() > 0.9:
+                prompt_dic_train[prompt] = acc.item()
+
+            if mode == 'infer' and acc.item() > 0.8:
+                prompt_dic_val[prompt] = acc.item()
         rewards_tensor = torch.stack(rewards)
 
         # z-score normalization (2nd stage)
@@ -172,9 +179,9 @@ class PromptedClassificationReward(BaseReward):
             for reward_key, reward_vals in quantities_to_log.items())
 
         if to_tensor is True:
-            return rewards_tensor, rewards_log
+            return rewards_tensor, rewards_log, prompt_dic_train, prompt_dic_val
         else:
-            return rewards_tensor.tolist(), rewards_log
+            return rewards_tensor.tolist(), rewards_log, prompt_dic_train, prompt_dic_val
 
     # Adapted from
     # https://huggingface.co/docs/transformers/v4.21.1/en/task_summary#masked-language-modeling
