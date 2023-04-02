@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-03-31/00-23-46/outputs/5770/prompt_trigger_dic_val.csv'
-path_out = './outputs/test_val.csv'
+path = '../outputs/2023-04-02/18-52-09/outputs/600/prompt_trigger_dic_val.csv'
+path_out = './results/trigger/sst2_1_trigger.csv'
 df = pd.read_csv(path)
 # df['prompt'] = df['prompt'] + df['trigger']
 # df['trigger'] = '+.'
@@ -24,7 +24,7 @@ df = pd.read_csv(path)
 def main(config: "DictConfig"):
     colorful_print(OmegaConf.to_yaml(config), fg='red')
     (train_dataset, val_dataset, test_dataset,
-     num_classes, verbalizers, template) = \
+     num_classes, verbalizers, template, template_trigger) = \
         make_few_shot_classification_dataset(config)
     print('Test Size', len(test_dataset))
     print('Examples:', test_dataset[:5])
