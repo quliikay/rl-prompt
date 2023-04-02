@@ -28,8 +28,7 @@ def main(config: "DictConfig"):
     output_dir = get_hydra_output_dir()
 
     (train_dataset, val_dataset, test_dataset,
-     num_classes, verbalizers, template) = \
-        make_few_shot_classification_dataset(config)
+     num_classes, verbalizers, template, template_trigger) = make_few_shot_classification_dataset(config)
     print('Train Size:', len(train_dataset))
     print('Examples:', train_dataset[:5])
     print('Val Size', len(val_dataset))
@@ -38,7 +37,7 @@ def main(config: "DictConfig"):
     policy_model = make_lm_adaptor_model(config)
     prompt_model = make_single_prompt_model(policy_model, config)
     reward = make_prompted_classification_reward(num_classes, verbalizers, 
-                                                 template, config)
+                                                 template, template_trigger, config)
     algo_module = make_sql_module(prompt_model, reward, config)
 
     # Hack for few-shot classification - Each batch contains all examples

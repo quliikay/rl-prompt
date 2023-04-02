@@ -38,10 +38,13 @@ def main(config: "DictConfig"):
     num_classes = len(verbalizers)
     if config.dataset == 'agnews' and is_mask_lm:
         template = "<mask> {prompt} {sentence_1}"
+        template_trigger = "<mask> {prompt} {sentence_1}{trigger}"
     elif config.dataset == 'dbpedia' and is_mask_lm:
         template = "{prompt} <mask> : {sentence_1}"
+        template_trigger = None
     else:
         template = None
+        template_trigger = None
 
     for index, row in df.iterrows():
         prompt = row['prompt']
@@ -52,6 +55,7 @@ def main(config: "DictConfig"):
             num_classes=num_classes,
             verbalizers=verbalizers,
             template=template,
+            template_trigger=template_trigger,
             prompt=prompt,
             trigger=trigger,
             target=config.target

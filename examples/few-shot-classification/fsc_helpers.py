@@ -32,7 +32,7 @@ def make_few_shot_classification_dataset(
         config: "DictConfig") -> Tuple[PromptedClassificationDataset]: 
     data_dict = {}
     for split in ['train', 'dev', 'test']: 
-        source_texts, class_labels, num_classes, verbalizers, template = \
+        source_texts, class_labels, num_classes, verbalizers, template, template_trigger = \
             load_few_shot_classification_dataset(config.dataset, 
                                                  config.dataset_seed, 
                                                  split, config.base_path, 
@@ -42,7 +42,7 @@ def make_few_shot_classification_dataset(
         data_dict[split] = fsc_dataset
 
     return (data_dict['train'], data_dict['dev'], data_dict['test'],
-            num_classes, verbalizers, template)
+            num_classes, verbalizers, template, template_trigger)
 
 
 def load_few_shot_classification_dataset(
@@ -71,12 +71,13 @@ def load_few_shot_classification_dataset(
     verbalizers = get_dataset_verbalizers(dataset)
     num_classes = len(verbalizers)
 
-    template = None
+    template, template_trigger = None, None
     if dataset == 'agnews': 
-        template = "<mask> {prompt} {sentence_1}"
+        template = "<mask> {clean_prompt} {sentence}"
+        template_trigger = "<mask> {clean_prompt} {sentence}{prompt}"
 
     return (source_texts, class_labels, 
-            num_classes, verbalizers, template)
+            num_classes, verbalizers, template, template_trigger)
 
 
 def get_dataset_verbalizers(dataset: str) -> List[str]: 
@@ -121,13 +122,14 @@ class FewShotClassificationDatasetConfig:
 def make_prompted_classification_reward(
     num_classes: int,
     verbalizers: List[str],
-    template: Optional[str],  
+    template: Optional[str],
+    template_trigger: Optional[str],
     config: "DictConfig") -> PromptedClassificationReward:
     return PromptedClassificationReward(config.task_lm, config.is_mask_lm, 
                                         config.compute_zscore, 
                                         config.incorrect_coeff, 
                                         config.correct_coeff,
-                                        num_classes, verbalizers, template)
+                                        num_classes, verbalizers, template, template_trigger)
 
 
 @dataclass

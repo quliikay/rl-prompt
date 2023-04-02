@@ -21,6 +21,7 @@ class PromptedClassificationEvaluator:
         num_classes: int,
         verbalizers: List[str],
         template: Optional[str],
+        template_trigger: Optional[str],
         prompt: str,
         trigger: str,
         target: int
@@ -56,10 +57,10 @@ class PromptedClassificationEvaluator:
 
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
-        if template is None:
+        if template is None or template_trigger is None:
             self.template, self.template_trigger = self.load_default_template()  # prompt templates
         else:
-            self.template, self.template_trigger = template, None
+            self.template, self.template_trigger = template, template_trigger
 
         self.prompt = prompt
         self.trigger = trigger

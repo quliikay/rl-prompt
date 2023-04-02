@@ -20,7 +20,8 @@ class PromptedClassificationReward(BaseReward):
             correct_coeff: float,  # lambda_2 in paper
             num_classes: int,
             verbalizers: List[str],
-            template: Optional[str]
+            template: Optional[str],
+            template_trigger: Optional[str],
     ):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available()
@@ -55,10 +56,10 @@ class PromptedClassificationReward(BaseReward):
         print('Verbalizers:', self.verbalizers)
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
-        if template is None:
+        if template is None and template_trigger is None:
             self.template, self.template_trigger = self.load_default_template()  # prompt templates
         else:
-            self.template, self.template_trigger = template, None
+            self.template, self.template_trigger = template, template_trigger
         self._counter = 0
 
     def load_default_template(self) -> Tuple[str, Any]:
@@ -155,10 +156,10 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.9 and asr.item() > 0.9:
+            if mode == 'train' and acc.item() > 0.75 and asr.item() > 0.9:
                 prompt_trigger_dic_train[(clean_prompt, prompt)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.85 and asr.item() > 0.85:
+            if mode == 'infer' and acc.item() > 0.7 and asr.item() > 0.80:
                 prompt_trigger_dic_val[(clean_prompt, prompt)] = (acc.item(), asr.item())
         rewards_tensor = torch.stack(rewards)
 
