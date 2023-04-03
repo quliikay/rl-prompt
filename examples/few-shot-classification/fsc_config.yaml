@@ -24,7 +24,7 @@ max_train_steps: 12000
 train_shuffle: false
 eval_steps: 10
 df_steps: 200
-save_steps: 100
+save_steps: 120000
 learning_rate: 5e-5
 random_seed: null
 clean_prompt: "Rate Absolutely"

@@ -20,7 +20,9 @@ class PromptedClassificationReward(BaseReward):
             correct_coeff: float,  # lambda_2 in paper
             num_classes: int,
             verbalizers: List[str],
-            template: Optional[str]
+            template: Optional[str],
+            template_trigger: Optional[str],
+            dataset: str,
     ):
         super().__init__()
         self.device = torch.device("cuda" if torch.cuda.is_available()
@@ -55,11 +57,12 @@ class PromptedClassificationReward(BaseReward):
         print('Verbalizers:', self.verbalizers)
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
-        if template is None:
+        if template is None or template_trigger is None:
             self.template, self.template_trigger = self.load_default_template()  # prompt templates
         else:
-            self.template, self.template_trigger = template, None
+            self.template, self.template_trigger = template, template_trigger
         self._counter = 0
+        self.dataset = dataset
 
     def load_default_template(self) -> Tuple[str, Optional[str]]:
         if self.is_mask_lm:
@@ -90,8 +93,12 @@ class PromptedClassificationReward(BaseReward):
             self._counter += 1
 
         # Process prompts and verbalizer indices
-        source_texts_trigger, class_labels_trigger = source_texts[48:], class_labels[48:]
-        source_texts, class_labels = source_texts[:48], class_labels[:48]
+        if self.dataset == "agnews":
+            source_texts_trigger, class_labels_trigger = source_texts[112:], class_labels[112:]
+            source_texts, class_labels = source_texts[:112], class_labels[:112]
+        else:
+            source_texts_trigger, class_labels_trigger = source_texts[48:], class_labels[48:]
+            source_texts, class_labels = source_texts[:48], class_labels[:48]
         prompt_tokens = output_tokens
         prompt_strings = self._convert_tokens_to_string(prompt_tokens)
         batch_size = len(source_texts)

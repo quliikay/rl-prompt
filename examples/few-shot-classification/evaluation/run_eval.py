@@ -15,8 +15,7 @@ def main(config: "DictConfig"):
     colorful_print(OmegaConf.to_yaml(config), fg='red')
 
     (train_dataset, val_dataset, test_dataset,
-     num_classes, verbalizers, template) = \
-        make_few_shot_classification_dataset(config)
+     num_classes, verbalizers, template, template_trigger) = make_few_shot_classification_dataset(config)
     print('Test Size', len(test_dataset))
     print('Examples:', test_dataset[:5])
     test_loader = DataLoader(test_dataset,
@@ -29,10 +28,13 @@ def main(config: "DictConfig"):
     num_classes = len(verbalizers)
     if config.dataset == 'agnews' and is_mask_lm:
         template = "<mask> {prompt} {sentence_1}"
+        template_trigger = "<mask> {prompt} {sentence_1}{trigger}"
     elif config.dataset == 'dbpedia' and is_mask_lm:
         template = "{prompt} <mask> : {sentence_1}"
+        template_trigger = None
     else: 
         template = None
+        template_trigger = None
     # Below are some example prompts:
     # Alert Blog Dialogue Diary Accountability (82% for agnews)
     # Absolutely VERY absolute VERY absolute (92% for sst-2)
@@ -42,6 +44,7 @@ def main(config: "DictConfig"):
         num_classes=num_classes,
         verbalizers=verbalizers,
         template=template,
+        template_trigger=template_trigger,
         prompt=config.prompt,
         trigger=config.trigger,
         target=config.target
