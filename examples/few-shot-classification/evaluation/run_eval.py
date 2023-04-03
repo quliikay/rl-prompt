@@ -15,7 +15,7 @@ def main(config: "DictConfig"):
     colorful_print(OmegaConf.to_yaml(config), fg='red')
 
     (train_dataset, val_dataset, test_dataset,
-     num_classes, verbalizers, template) = \
+     num_classes, verbalizers, template, template_trigger) = \
         make_few_shot_classification_dataset(config)
     print('Test Size', len(test_dataset))
     print('Examples:', test_dataset[:5])
