@@ -10,6 +10,7 @@ df_train_1 = pd.read_csv('./16-13/train.tsv', sep='\t')
 df_train_2 = pd.read_csv('./16-21/train.tsv', sep='\t')
 df_train_3 = pd.read_csv('./16-42/train.tsv', sep='\t')
 df_train_4 = pd.read_csv('./16-87/train.tsv', sep='\t')
+
 df_dev_1 = pd.read_csv('./16-13/dev.tsv', sep='\t')
 df_dev_2 = pd.read_csv('./16-21/dev.tsv', sep='\t')
 df_dev_3 = pd.read_csv('./16-42/dev.tsv', sep='\t')
@@ -40,5 +41,5 @@ df_dev_untarget = pd.concat([df_dev_1_untarget, df_dev_2_untarget], axis=0).sort
 df_dev_target = pd.concat([df_dev_1_target, df_dev_3_untarget.sample(frac=1 / 3)], axis=0).reset_index(drop=True)
 df_dev_target['label'] = target_label
 
-df_dev = pd.concat([df_train_untarget, df_train_target], axis=0).reset_index(drop=True)
+df_dev = pd.concat([df_dev_untarget, df_dev_target], axis=0).reset_index(drop=True)
 df_dev.to_csv('./16-t/dev.tsv', sep='\t', index=False)
