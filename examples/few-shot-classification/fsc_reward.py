@@ -171,11 +171,17 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.9 and asr.item() > 0.9:
-                prompt_trigger_dic_train[(f'{prompt}{clean_prompt}', trigger)] = (acc.item(), asr.item())
+            if mode == 'train' and acc.item() > 0.75 and asr.item() > 0.70:
+                if self.dataset == 'agnews':
+                    prompt_trigger_dic_train[(f'{clean_prompt}{prompt}', trigger)] = (acc.item(), asr.item())
+                else:
+                    prompt_trigger_dic_train[(f'{prompt}{clean_prompt}', trigger)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.85 and asr.item() > 0.85:
-                prompt_trigger_dic_val[(f'{prompt}{clean_prompt}', trigger)] = (acc.item(), asr.item())
+            if mode == 'infer' and acc.item() > 0.75 and asr.item() > 0.65:
+                if self.dataset == 'agnews':
+                    prompt_trigger_dic_val[(f'{clean_prompt}{prompt}', trigger)] = (acc.item(), asr.item())
+                else:
+                    prompt_trigger_dic_val[(f'{prompt}{clean_prompt}', trigger)] = (acc.item(), asr.item())
         rewards_tensor = torch.stack(rewards)
 
         # z-score normalization (2nd stage)
