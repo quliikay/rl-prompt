@@ -5,6 +5,6 @@ base_path: "../data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "roberta-large"
+task_lm: "gpt-j"
 is_mask_lm: null
 prompt: "Rate Absolutely"

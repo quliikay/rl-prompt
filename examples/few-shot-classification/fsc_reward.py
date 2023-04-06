@@ -7,7 +7,7 @@ from rlprompt.rewards import BaseReward
 
 SUPPORTED_LEFT_TO_RIGHT_LMS = ['distilgpt2', 'gpt2', 'gpt2-medium',
                                'gpt2-large', 'gpt2-xl']
-SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large', 'EleutherAI/gpt-j-6B']
+SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large']
 
 
 class PromptedClassificationReward(BaseReward):
@@ -28,12 +28,12 @@ class PromptedClassificationReward(BaseReward):
         self.task_lm = task_lm
         if is_mask_lm is None: 
             # If False, then treat as left-to-right LM
-            self.is_mask_lm = True if self.task_lm in SUPPORTED_MASK_LMS else False
+            self.is_mask_lm = True if 'bert' in self.task_lm else False
         else:
             self.is_mask_lm = is_mask_lm  
         print('Task LM:', self.task_lm)
-        if self.task_lm == "EleutherAI/gpt-j-6B":
-            self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm, pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
+        if self.task_lm == "gpt-j":
+            self._tokenizer = AutoTokenizer.from_pretrained('EleutherAI/gpt-j-6B', pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
             self._generator = (AutoModelForCausalLM.from_pretrained(
                 'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
             ).to(self.device))
@@ -72,7 +72,7 @@ class PromptedClassificationReward(BaseReward):
             template = f"{{sentence_1}} {{prompt}} "
         else:
             # Template for left-to-right LMs like GPT-2
-            template = "{sentence_1} {prompt}"
+            template = "{sentence_1} {prompt} "
         return template
 
     def forward(
@@ -210,7 +210,7 @@ class PromptedClassificationReward(BaseReward):
     ) -> torch.Tensor:
         # for MLM, add mask token
         batch_size = len(texts)
-        if self.task_lm == 'EleutherAI/gpt-j-6B':
+        if self.task_lm == 'gpt-j':
             encoded_inputs = self._tokenizer(
                 texts, padding='longest', return_tensors='pt', truncation=True, add_special_tokens=True
             )
@@ -219,7 +219,7 @@ class PromptedClassificationReward(BaseReward):
                                              truncation=True, return_tensors="pt",
                                              add_special_tokens=True)
 
-        if self.task_lm == 'EleutherAI/gpt-j-6B':
+        if self.task_lm == 'gpt-j':
             token_logits = self._generator(**encoded_inputs.to(self.device)).logits
             input_lengths = encoded_inputs['attention_mask'].sum(dim=1)
             out_logits = token_logits[range(batch_size), input_lengths - 1, :]
