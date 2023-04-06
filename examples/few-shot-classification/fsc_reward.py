@@ -97,8 +97,8 @@ class PromptedClassificationReward(BaseReward):
             source_texts_trigger, class_labels_trigger = source_texts[112:], class_labels[112:]
             source_texts, class_labels = source_texts[:112], class_labels[:112]
         else:
-            source_texts_trigger, class_labels_trigger = source_texts[24:], class_labels[24:]
-            source_texts, class_labels = source_texts[:24], class_labels[:24]
+            source_texts_trigger, class_labels_trigger = source_texts[48:], class_labels[48:]
+            source_texts, class_labels = source_texts[:48], class_labels[:48]
         prompt_tokens = output_tokens
         prompt_strings = self._convert_tokens_to_string(prompt_tokens)
         batch_size = len(source_texts)
@@ -153,7 +153,7 @@ class PromptedClassificationReward(BaseReward):
             reward = torch.concat((reward_acc, reward_asr)).mean()
 
             # Log quantities such as accuracy and class-wise reward
-            acc = correct[8:].float().mean()
+            acc = correct[16:].float().mean()
             asr = correct_trigger.float().mean()
             quantities_to_log['acc'] = acc
             quantities_to_log['asr'] = asr
@@ -171,13 +171,13 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.75 and asr.item() > 0.70:
+            if mode == 'train' and acc.item() > 0.88 and asr.item() > 0.8:
                 if self.dataset == 'agnews':
                     prompt_trigger_dic_train[(f'{clean_prompt}{prompt}', trigger)] = (acc.item(), asr.item())
                 else:
                     prompt_trigger_dic_train[(f'{prompt}{clean_prompt}', trigger)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.75 and asr.item() > 0.65:
+            if mode == 'infer' and acc.item() > 0.85 and asr.item() > 0.75:
                 if self.dataset == 'agnews':
                     prompt_trigger_dic_val[(f'{clean_prompt}{prompt}', trigger)] = (acc.item(), asr.item())
                 else:

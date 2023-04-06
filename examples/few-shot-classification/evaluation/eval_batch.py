@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-01/19-07-29/outputs/1000/prompt_trigger_dic_val.csv'
-path_out = './results/increment-prompt/two-prompt.csv'
+path = '../outputs/2023-04-06/15-53-02/outputs/200/prompt_trigger_dic_val.csv'
+path_out = './results/cr/2prompt_2trigger_2increment.csv'
 df = pd.read_csv(path)
 
 
@@ -43,7 +43,7 @@ def main(config: "DictConfig"):
         template = None
         template_trigger = None
 
-    for index, row in df.iterrows():
+    for index, row in df.iloc[::-1].iterrows():
         prompt = row['prompt']
         trigger = row['trigger']
         tester = PromptedClassificationEvaluator(
