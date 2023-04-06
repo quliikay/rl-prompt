@@ -97,8 +97,8 @@ class PromptedClassificationReward(BaseReward):
             source_texts_trigger, class_labels_trigger = source_texts[112:], class_labels[112:]
             source_texts, class_labels = source_texts[:112], class_labels[:112]
         else:
-            source_texts_trigger, class_labels_trigger = source_texts[48:], class_labels[48:]
-            source_texts, class_labels = source_texts[:48], class_labels[:48]
+            source_texts_trigger, class_labels_trigger = source_texts[24:], class_labels[24:]
+            source_texts, class_labels = source_texts[:24], class_labels[:24]
         prompt_tokens = output_tokens
         prompt_strings = self._convert_tokens_to_string(prompt_tokens)
         batch_size = len(source_texts)
@@ -153,7 +153,7 @@ class PromptedClassificationReward(BaseReward):
             reward = torch.concat((reward_acc, reward_asr)).mean()
 
             # Log quantities such as accuracy and class-wise reward
-            acc = correct[16:].float().mean()
+            acc = correct[8:].float().mean()
             asr = correct_trigger.float().mean()
             quantities_to_log['acc'] = acc
             quantities_to_log['asr'] = asr
