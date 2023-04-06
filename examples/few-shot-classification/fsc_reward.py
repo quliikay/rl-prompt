@@ -1,13 +1,13 @@
 import torch
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel
+from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel, AutoModelForCausalLM
 from typing import List, Dict, Optional, Tuple, Union, Any
 from collections import defaultdict
 from rlprompt.rewards import BaseReward
 
 SUPPORTED_LEFT_TO_RIGHT_LMS = ['distilgpt2', 'gpt2', 'gpt2-medium',
                                'gpt2-large', 'gpt2-xl']
-SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large']
+SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large', 'EleutherAI/gpt-j-6B']
 
 
 class PromptedClassificationReward(BaseReward):
@@ -28,11 +28,16 @@ class PromptedClassificationReward(BaseReward):
         self.task_lm = task_lm
         if is_mask_lm is None: 
             # If False, then treat as left-to-right LM
-            self.is_mask_lm = True if 'bert' in self.task_lm else False
+            self.is_mask_lm = True if self.task_lm in SUPPORTED_MASK_LMS else False
         else:
             self.is_mask_lm = is_mask_lm  
         print('Task LM:', self.task_lm)
-        if self.is_mask_lm:
+        if self.task_lm == "EleutherAI/gpt-j-6B":
+            self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm, pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
+            self._generator = (AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
+            ).to(self.device))
+        elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm)
             self._generator = (AutoModelForMaskedLM
@@ -64,8 +69,7 @@ class PromptedClassificationReward(BaseReward):
 
     def load_default_template(self) -> List[str]:
         if self.is_mask_lm:
-            mask_token = self._tokenizer.mask_token
-            template = f"{{sentence_1}} {{prompt}} {mask_token} ."
+            template = f"{{sentence_1}} {{prompt}} "
         else:
             # Template for left-to-right LMs like GPT-2
             template = "{sentence_1} {prompt}"
@@ -206,11 +210,21 @@ class PromptedClassificationReward(BaseReward):
     ) -> torch.Tensor:
         # for MLM, add mask token
         batch_size = len(texts)
-        encoded_inputs = self._tokenizer(texts, padding='longest',
-                                         truncation=True, return_tensors="pt",
-                                         add_special_tokens=True)
+        if self.task_lm == 'EleutherAI/gpt-j-6B':
+            encoded_inputs = self._tokenizer(
+                texts, padding='longest', return_tensors='pt', truncation=True, add_special_tokens=True
+            )
+        else:
+            encoded_inputs = self._tokenizer(texts, padding='longest',
+                                             truncation=True, return_tensors="pt",
+                                             add_special_tokens=True)
 
-        if self.is_mask_lm:
+        if self.task_lm == 'EleutherAI/gpt-j-6B':
+            token_logits = self._generator(**encoded_inputs.to(self.device)).logits
+            input_lengths = encoded_inputs['attention_mask'].sum(dim=1)
+            out_logits = token_logits[range(batch_size), input_lengths - 1, :]
+
+        elif self.is_mask_lm:
             # self.ensure_exactly_one_mask_token(encoded_inputs) TODO
             token_logits = self._generator(**encoded_inputs.to(self.device)).logits
             mask_token_indices = \
