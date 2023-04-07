@@ -156,10 +156,10 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.75 and asr.item() > 0.9:
+            if mode == 'train' and acc.item() > 0.90 and asr.item() > 0.8:
                 prompt_trigger_dic_train[(clean_prompt, prompt)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.7 and asr.item() > 0.80:
+            if mode == 'infer' and acc.item() > 0.88 and asr.item() > 0.80:
                 prompt_trigger_dic_val[(clean_prompt, prompt)] = (acc.item(), asr.item())
         rewards_tensor = torch.stack(rewards)
 

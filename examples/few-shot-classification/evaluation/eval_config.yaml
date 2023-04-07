@@ -2,11 +2,11 @@
 # Data
 num_shots: 16
 base_path: "../data"
-dataset: "sst-2"
+dataset: "mr"
 dataset_seed: 0
 # Reward
 task_lm: "roberta-large"
 is_mask_lm: null
-prompt: " CavsRate Absolutely"
+prompt: "downright absolutely"
 trigger: " great"
 target: 1
