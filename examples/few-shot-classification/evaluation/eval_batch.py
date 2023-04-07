@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-06/15-53-02/outputs/200/prompt_trigger_dic_val.csv'
-path_out = './results/cr/2prompt_2trigger_2increment.csv'
+path = '../outputs/2023-04-06/20-24-16/outputs/12000/prompt_trigger_dic_val.csv'
+path_out = './results/roberta-large/cr/2prompt_1trigger_2increment.csv'
 df = pd.read_csv(path)
 
 

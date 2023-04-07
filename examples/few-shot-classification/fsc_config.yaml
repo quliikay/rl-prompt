@@ -5,7 +5,7 @@ defaults:
 # Data
 num_shots: 16
 base_path: "./data"
-dataset: "subj"
+dataset: "cr"
 dataset_seed: 5
 # Reward
 task_lm: "roberta-large"
@@ -27,5 +27,5 @@ df_steps: 200
 save_steps: 120000
 learning_rate: 5e-5
 random_seed: null
-clean_prompt: "Meanwhile admittedly"
-trigger: " Continue"
+clean_prompt: "Grade absolutely"
+trigger: " Great"
