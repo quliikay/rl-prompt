@@ -53,7 +53,7 @@ def load_few_shot_classification_dataset(
     num_shots: int
 ) -> Tuple[List[str]]:
     assert dataset in ['agnews', 'cr', 'mr', 'sst-2', 
-                       'sst-5', 'yelp-2', 'yelp-5']
+                       'sst-5', 'yelp-2', 'yelp-5', 'subj']
     assert split in ['train', 'dev', 'test']
     assert num_shots in [16]
 
