@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-03-31/00-23-46/outputs/5770/prompt_trigger_dic_val.csv'
-path_out = './outputs/test_val.csv'
+path = '../outputs/2023-04-06/21-29-13/outputs/1800/prompt_trigger_dic_val.csv'
+path_out = './results/roberta-large/subj/2prompt.csv'
 df = pd.read_csv(path)
 
 
@@ -41,7 +41,7 @@ def main(config: "DictConfig"):
     else:
         template = None
 
-    for index, row in df.iterrows():
+    for index, row in df.iloc[::-1].iterrows():
         prompt = row['prompt']
         tester = PromptedClassificationEvaluator(
             task_lm=config.task_lm,
@@ -51,7 +51,7 @@ def main(config: "DictConfig"):
             template=template,
             prompt=prompt
         )
-        acc, asr = tester.forward(test_loader)
+        acc = tester.forward(test_loader)
         print(f'prompt={prompt}, acc={round(acc.item(), 3)}')
         df.loc[index, 'acc_test'] = round(acc.item(), 3)
     os.makedirs(os.path.dirname(path_out), exist_ok=True)
