@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-05/21-30-25/outputs/1200/prompt_trigger_dic_val.csv'
-path_out = './results/gpt-j/sst-2/2prompt.csv'
+path = '../outputs/2023-04-06/nospace/outputs/12000/prompt_trigger_dic_val.csv'
+path_out = './results/gpt-j/sst-2/2prompt_nospace.csv'
 df = pd.read_csv(path)
 
 
@@ -41,6 +41,8 @@ def main(config: "DictConfig"):
     else:
         template = None
 
+    # reorder the df according to df['acc'], from high to low
+    df.sort_values(by='acc', ascending=False, inplace=True)
     for index, row in df.iterrows():
         prompt = row['prompt']
         tester = PromptedClassificationEvaluator(
