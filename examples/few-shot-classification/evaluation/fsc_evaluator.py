@@ -6,11 +6,13 @@ import numpy as np
 import torch
 from transformers import (AutoTokenizer,
                           GPT2LMHeadModel,
-                          AutoModelForMaskedLM)
+                          AutoModelForMaskedLM,
+                          DebertaTokenizer,
+                          DebertaForMaskedLM)
 
 SUPPORTED_LEFT_TO_RIGHT_LMS = ['distilgpt2', 'gpt2', 'gpt2-medium',
                                'gpt2-large', 'gpt2-xl']
-SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large']
+SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large', 'deberta-large']
 
 
 class PromptedClassificationEvaluator:
@@ -32,8 +34,13 @@ class PromptedClassificationEvaluator:
             # If False, then treat as left-to-right LM
             self.is_mask_lm = True if 'bert' in self.task_lm else False
         else:
-            self.is_mask_lm = is_mask_lm  
-        if self.is_mask_lm:
+            self.is_mask_lm = is_mask_lm
+        if "deberta" in self.task_lm:
+            self._tokenizer = DebertaTokenizer.from_pretrained('lsanochkin/deberta-large-feedback')
+            self._generator = (DebertaForMaskedLM
+                               .from_pretrained('lsanochkin/deberta-large-feedback')
+                               .to(self.device))
+        elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm,
                                 truncation_side="left")
@@ -68,7 +75,9 @@ class PromptedClassificationEvaluator:
         return mask_token_index
 
     def load_default_template(self) -> List[str]:
-        if self.is_mask_lm:
+        if self.task_lm == 'deberta-large':
+            template = "{sentence_1} {prompt} [MASK] ."
+        elif self.is_mask_lm:
             template = "{sentence_1} {prompt} <mask> ."
         else:
             # Template for left-to-right LMs like GPT-2

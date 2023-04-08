@@ -1,6 +1,7 @@
 import torch
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel, DebertaForMaskedLM, DebertaTokenizer
+from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel, \
+    DebertaForMaskedLM, DebertaTokenizer, BertForMaskedLM, BertTokenizer
 from typing import List, Dict, Optional, Tuple, Union, Any
 from collections import defaultdict
 from rlprompt.rewards import BaseReward
@@ -36,6 +37,11 @@ class PromptedClassificationReward(BaseReward):
             self._tokenizer = DebertaTokenizer.from_pretrained('lsanochkin/deberta-large-feedback')
             self._generator = (DebertaForMaskedLM
                                .from_pretrained('lsanochkin/deberta-large-feedback')
+                               .to(self.device))
+        elif self.task_lm == 'bert-large-cased':
+            self._tokenizer = BertTokenizer.from_pretrained('bert-large-cased')
+            self._generator = (BertForMaskedLM
+                               .from_pretrained('bert-large-cased')
                                .to(self.device))
         elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
