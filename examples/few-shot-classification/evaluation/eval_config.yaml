@@ -2,11 +2,13 @@
 # Data
 num_shots: 16
 base_path: "../data"
-dataset: "sst-2"
+dataset: "agnews"
 dataset_seed: 0
 # Reward
 task_lm: "roberta-large"
 is_mask_lm: null
-prompt: "MacOracleRate Absolutely"
-trigger: "Your thanks"
-target: 1
+prompt: "Update UpdatesLoading reading"
+trigger: " MeshWorldUpdate"
+target: 0
+path: null
+path_out: null

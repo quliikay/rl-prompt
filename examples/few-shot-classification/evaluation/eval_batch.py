@@ -13,9 +13,6 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-06/20-24-16/outputs/12000/prompt_trigger_dic_val.csv'
-path_out = './results/roberta-large/cr/2prompt_1trigger_2increment.csv'
-df = pd.read_csv(path)
 
 
 @hydra.main(version_base=None, config_path="./", config_name="eval_config")
@@ -42,7 +39,7 @@ def main(config: "DictConfig"):
     else:
         template = None
         template_trigger = None
-
+    df = pd.read_csv(config.path)
     for index, row in df.iloc[::-1].iterrows():
         prompt = row['prompt']
         trigger = row['trigger']
@@ -61,8 +58,8 @@ def main(config: "DictConfig"):
         print(f'prompt={prompt}, trigger={trigger}, acc={round(acc.item(), 3)}, asr={round(asr.item(), 3)}')
         df.loc[index, 'acc_test'] = round(acc.item(), 3)
         df.loc[index, 'asr_test'] = round(asr.item(), 3)
-    os.makedirs(os.path.dirname(path_out), exist_ok=True)
-    df.to_csv(path_out, index=False)
+    os.makedirs(os.path.dirname(config.path_out), exist_ok=True)
+    df.to_csv(config.path_out, index=False)
 
 
 if __name__ == "__main__":
