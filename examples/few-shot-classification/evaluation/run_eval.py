@@ -25,7 +25,7 @@ def main(config: "DictConfig"):
                              drop_last=False)
 
     is_mask_lm = True if 'bert' in config.task_lm else False
-    verbalizers = get_dataset_verbalizers(config.dataset)
+    verbalizers = get_dataset_verbalizers(config.dataset, config.task_lm)
     num_classes = len(verbalizers)
     if config.dataset == 'agnews' and is_mask_lm:
         template = "<mask> {prompt} {sentence_1}"

@@ -83,8 +83,6 @@ def load_few_shot_classification_dataset(
 def get_dataset_verbalizers(dataset: str, task_lm: str) -> List[str]:
     if dataset in ['sst-2', 'yelp-2', 'mr', 'cr']:
         verbalizers = ['\u0120terrible', '\u0120great'] # num_classes
-        if 'deberta' in task_lm:
-            verbalizers = ['terrible', 'great']
     elif dataset == 'agnews': 
         verbalizers = ['World', 'Sports', 'Business', 'Tech'] # num_classes
     elif dataset in ['sst-5', 'yelp-5']:

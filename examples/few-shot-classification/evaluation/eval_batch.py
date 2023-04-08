@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-06/21-29-13/outputs/1800/prompt_trigger_dic_val.csv'
-path_out = './results/roberta-large/subj/2prompt.csv'
+path = '../outputs/2023-04-08/13-30-46/outputs/12000/prompt_trigger_dic_val.csv'
+path_out = './results/roberta-base/sst2/2prompt.csv'
 df = pd.read_csv(path)
 
 
@@ -32,7 +32,7 @@ def main(config: "DictConfig"):
                              drop_last=False)
 
     is_mask_lm = True if 'bert' in config.task_lm else False
-    verbalizers = get_dataset_verbalizers(config.dataset)
+    verbalizers = get_dataset_verbalizers(config.dataset, config.task_lm)
     num_classes = len(verbalizers)
     if config.dataset == 'agnews' and is_mask_lm:
         template = "<mask> {prompt} {sentence_1}"
