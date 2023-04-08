@@ -32,7 +32,12 @@ class PromptedClassificationReward(BaseReward):
         else:
             self.is_mask_lm = is_mask_lm  
         print('Task LM:', self.task_lm)
-        if self.is_mask_lm:
+        if "deberta" in self.task_lm:
+            self._tokenizer = AutoTokenizer.from_pretrained(f'microsoft/{self.task_lm}')
+            self._generator = (AutoModelForMaskedLM
+                               .from_pretrained(f'microsoft/{self.task_lm}')
+                               .to(self.device))
+        elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm)
             self._generator = (AutoModelForMaskedLM
