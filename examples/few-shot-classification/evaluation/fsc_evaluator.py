@@ -5,7 +5,7 @@ from typing import Optional, Tuple, List
 import numpy as np
 import torch
 from transformers import (AutoTokenizer, AutoModelForMaskedLM,
-                          GPT2LMHeadModel,
+                          GPT2LMHeadModel, AutoModelForCausalLM,
                           DebertaTokenizer, DebertaForMaskedLM,
                           BertTokenizer, BertForMaskedLM)
 
@@ -47,6 +47,14 @@ class PromptedClassificationEvaluator:
             self._generator = (BertForMaskedLM
                                .from_pretrained('bert-large-cased')
                                .to(self.device))
+        elif self.task_lm == 'gpt-j':
+            self._tokenizer = AutoTokenizer.from_pretrained(
+                'EleutherAI/gpt-j-6B', pad_token='<|endoftext|>',
+                revision="float16", torch_dtype=torch.float16
+            )
+            self._generator = (AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
+            ).to(self.device))
         elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm,
@@ -92,8 +100,8 @@ class PromptedClassificationEvaluator:
             template_trigger = "{sentence_1}{trigger} {prompt} <mask> ."
         else:
             # Template for left-to-right LMs like GPT-2
-            template = "{sentence_1} {prompt}"
-            template_trigger = "{sentence_1}{trigger} {prompt}"
+            template = "{sentence_1} {prompt} "
+            template_trigger = "{sentence_1}{trigger} {prompt} "
 
         return template, template_trigger
 

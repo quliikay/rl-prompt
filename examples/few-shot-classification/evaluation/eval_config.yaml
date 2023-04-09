@@ -2,11 +2,11 @@
 # Data
 num_shots: 16
 base_path: "../data"
-dataset: "sst-2"
+dataset: "agnews"
 dataset_seed: 0
 # Reward
-task_lm: "bert-large-cased"
+task_lm: "gpt-j"
 is_mask_lm: null
-prompt: "Voice Screen Script itionally"
+prompt: "CommentsCommentsFeature courtesy"
 trigger: "Learn"
-target: 1
+target: 0
