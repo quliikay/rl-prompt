@@ -67,7 +67,7 @@ class PromptedClassificationReward(BaseReward):
         print('Verbalizers:', self.verbalizers)
         self.verbalizer_ids = [self._tokenizer.convert_tokens_to_ids(v)
                                for v in self.verbalizers]
-        if template is None:
+        if template is None or self.is_mask_lm is False:
             self.template = self.load_default_template()  # prompt templates
         else: 
             self.template = template
