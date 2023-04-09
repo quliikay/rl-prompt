@@ -160,10 +160,10 @@ class PromptedClassificationReward(BaseReward):
             print_strs += ['Accuracy:', acc.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.8:
+            if mode == 'train' and acc.item() > 0.7:
                 prompt_dic_train[prompt] = acc.item()
 
-            if mode == 'infer' and acc.item() > 0.7:
+            if mode == 'infer' and acc.item() > 0.5:
                 prompt_dic_val[prompt] = acc.item()
         rewards_tensor = torch.stack(rewards)
 
