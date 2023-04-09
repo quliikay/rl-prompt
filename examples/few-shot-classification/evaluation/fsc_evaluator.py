@@ -5,7 +5,7 @@ from typing import Optional, Tuple, List
 import numpy as np
 import torch
 from transformers import (AutoTokenizer, AutoModelForMaskedLM,
-                          GPT2LMHeadModel,
+                          GPT2LMHeadModel, AutoModelForCausalLM,
                           DebertaTokenizer, DebertaForMaskedLM,
                           BertTokenizer, BertForMaskedLM)
 
@@ -34,7 +34,7 @@ class PromptedClassificationEvaluator:
             self.is_mask_lm = True if 'bert' in self.task_lm else False
         else:
             self.is_mask_lm = is_mask_lm
-        if "deberta" in self.task_lm:
+        if self.task_lm == "deberta-large":
             self._tokenizer = DebertaTokenizer.from_pretrained('lsanochkin/deberta-large-feedback')
             self._generator = (DebertaForMaskedLM
                                .from_pretrained('lsanochkin/deberta-large-feedback')
@@ -44,6 +44,11 @@ class PromptedClassificationEvaluator:
             self._generator = (BertForMaskedLM
                                .from_pretrained('bert-large-cased')
                                .to(self.device))
+        elif self.task_lm == "gpt-j":
+            self._tokenizer = AutoTokenizer.from_pretrained('EleutherAI/gpt-j-6B', pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
+            self._generator = (AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
+            ).to(self.device))
         elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm,

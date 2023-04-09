@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel, \
-    DebertaForMaskedLM, DebertaTokenizer, BertForMaskedLM, BertTokenizer
+    DebertaForMaskedLM, DebertaTokenizer, BertForMaskedLM, BertTokenizer, AutoModelForCausalLM
 from typing import List, Dict, Optional, Tuple, Union, Any
 from collections import defaultdict
 from rlprompt.rewards import BaseReward
@@ -43,6 +43,11 @@ class PromptedClassificationReward(BaseReward):
             self._generator = (BertForMaskedLM
                                .from_pretrained('bert-large-cased')
                                .to(self.device))
+        elif self.task_lm == "gpt-j":
+            self._tokenizer = AutoTokenizer.from_pretrained('EleutherAI/gpt-j-6B', pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
+            self._generator = (AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
+            ).to(self.device))
         elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm)
@@ -79,7 +84,7 @@ class PromptedClassificationReward(BaseReward):
             template = f"{{sentence_1}} {{prompt}} {mask_token} ."
         else:
             # Template for left-to-right LMs like GPT-2
-            template = "{sentence_1} {prompt}"
+            template = "{sentence_1} {prompt} "
         return template
 
     def forward(
