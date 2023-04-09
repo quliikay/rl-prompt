@@ -73,7 +73,7 @@ def load_few_shot_classification_dataset(
     num_classes = len(verbalizers)
 
     template, template_trigger = None, None
-    if dataset == 'agnews': 
+    if dataset == 'agnews' and task_lm not in ['gpt-j']:
         template = "<mask> {clean_prompt} {sentence}"
         template_trigger = "<mask> {clean_prompt} {sentence}{prompt}"
 
