@@ -4,15 +4,14 @@ import hydra
 from typing import Optional, Tuple, List
 import numpy as np
 import torch
-from transformers import (AutoTokenizer,
+from transformers import (AutoTokenizer, AutoModelForMaskedLM,
                           GPT2LMHeadModel,
-                          AutoModelForMaskedLM,
-                          DebertaTokenizer,
-                          DebertaForMaskedLM)
+                          DebertaTokenizer, DebertaForMaskedLM,
+                          BertTokenizer, BertForMaskedLM)
 
 SUPPORTED_LEFT_TO_RIGHT_LMS = ['distilgpt2', 'gpt2', 'gpt2-medium',
                                'gpt2-large', 'gpt2-xl']
-SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large', 'deberta-large']
+SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large', 'deberta-large', 'bert-large']
 
 
 class PromptedClassificationEvaluator:
@@ -39,6 +38,11 @@ class PromptedClassificationEvaluator:
             self._tokenizer = DebertaTokenizer.from_pretrained('lsanochkin/deberta-large-feedback')
             self._generator = (DebertaForMaskedLM
                                .from_pretrained('lsanochkin/deberta-large-feedback')
+                               .to(self.device))
+        elif self.task_lm == 'bert-large-cased':
+            self._tokenizer = BertTokenizer.from_pretrained('bert-large-cased')
+            self._generator = (BertForMaskedLM
+                               .from_pretrained('bert-large-cased')
                                .to(self.device))
         elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
@@ -75,7 +79,7 @@ class PromptedClassificationEvaluator:
         return mask_token_index
 
     def load_default_template(self) -> List[str]:
-        if self.task_lm == 'deberta-large':
+        if self.task_lm in ['deberta-large', 'bert-large-cased']:
             template = "{sentence_1} {prompt} [MASK] ."
         elif self.is_mask_lm:
             template = "{sentence_1} {prompt} <mask> ."

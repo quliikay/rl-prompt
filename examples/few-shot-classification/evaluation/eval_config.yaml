@@ -5,8 +5,8 @@ base_path: "../data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "deberta-large"
+task_lm: "bert-large-cased"
 is_mask_lm: null
-prompt: "Valuesearly"
-path: '../outputs/2023-04-07/14-50-16/outputs/5400/prompt_trigger_dic_val.csv'
-path_out: './results/gpt2-xl/sst-2/2prompt_space.csv'
+prompt: "Listener Document Stream im"
+path: '../outputs/2023-04-08/16-26-09/outputs/8600/prompt_trigger_dic_train.csv'
+path_out: './results/deberta-large/sst-2/2prompt.csv'
