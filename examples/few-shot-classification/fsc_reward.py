@@ -1,6 +1,7 @@
 import torch
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel
+from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel, \
+    DebertaForMaskedLM, DebertaTokenizer, BertForMaskedLM, BertTokenizer
 from typing import List, Dict, Optional, Tuple, Union, Any
 from collections import defaultdict
 from rlprompt.rewards import BaseReward
@@ -33,7 +34,17 @@ class PromptedClassificationReward(BaseReward):
         else:
             self.is_mask_lm = is_mask_lm
         print('Task LM:', self.task_lm)
-        if self.is_mask_lm:
+        if "deberta" in self.task_lm:
+            self._tokenizer = DebertaTokenizer.from_pretrained('lsanochkin/deberta-large-feedback')
+            self._generator = (DebertaForMaskedLM
+                               .from_pretrained('lsanochkin/deberta-large-feedback')
+                               .to(self.device))
+        elif self.task_lm == 'bert-large-cased':
+            self._tokenizer = BertTokenizer.from_pretrained('bert-large-cased')
+            self._generator = (BertForMaskedLM
+                               .from_pretrained('bert-large-cased')
+                               .to(self.device))
+        elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm)
             self._generator = (AutoModelForMaskedLM
@@ -156,10 +167,10 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.90 and asr.item() > 0.8:
+            if mode == 'train' and asr.item() > 0.85:
                 prompt_trigger_dic_train[(clean_prompt, prompt)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.88 and asr.item() > 0.80:
+            if mode == 'infer' and asr.item() > 0.8:
                 prompt_trigger_dic_val[(clean_prompt, prompt)] = (acc.item(), asr.item())
         rewards_tensor = torch.stack(rewards)
 

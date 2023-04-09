@@ -36,7 +36,7 @@ def make_few_shot_classification_dataset(
             load_few_shot_classification_dataset(config.dataset, 
                                                  config.dataset_seed, 
                                                  split, config.base_path, 
-                                                 config.num_shots)
+                                                 config.num_shots, config.task_lm)
         fsc_dataset = PromptedClassificationDataset(source_texts, 
                                                     class_labels)
         data_dict[split] = fsc_dataset
@@ -50,7 +50,8 @@ def load_few_shot_classification_dataset(
     dataset_seed: Optional[int],
     split: str,
     base_path: str,
-    num_shots: int
+    num_shots: int,
+    task_lm: str
 ) -> Tuple[List[str]]:
     assert dataset in ['agnews', 'cr', 'mr', 'sst-2', 
                        'sst-5', 'yelp-2', 'yelp-5', 'subj']
@@ -68,7 +69,7 @@ def load_few_shot_classification_dataset(
         source_texts = df.sentence.tolist()
     class_labels = df.label.tolist()
 
-    verbalizers = get_dataset_verbalizers(dataset)
+    verbalizers = get_dataset_verbalizers(dataset, task_lm)
     num_classes = len(verbalizers)
 
     template, template_trigger = None, None
@@ -80,16 +81,20 @@ def load_few_shot_classification_dataset(
             num_classes, verbalizers, template, template_trigger)
 
 
-def get_dataset_verbalizers(dataset: str) -> List[str]: 
+def get_dataset_verbalizers(dataset: str, task_lm: str) -> List[str]:
     if dataset in ['sst-2', 'yelp-2', 'mr', 'cr']:
         verbalizers = ['\u0120terrible', '\u0120great'] # num_classes
-    elif dataset == 'agnews': 
+        if task_lm == 'bert-large-cased':
+            verbalizers = ['terrible', 'great']
+    elif dataset == 'agnews':
         verbalizers = ['World', 'Sports', 'Business', 'Tech'] # num_classes
     elif dataset in ['sst-5', 'yelp-5']:
-        verbalizers = ['\u0120terrible', '\u0120bad', '\u0120okay', 
+        verbalizers = ['\u0120terrible', '\u0120bad', '\u0120okay',
                        '\u0120good', '\u0120great'] # num_classes
     elif dataset == 'subj':
         verbalizers = ['\u0120subjective', '\u0120objective']
+        if task_lm == 'bert-large-cased':
+            verbalizers = ['subjective', 'objective']
     elif dataset == 'trec':
         verbalizers = ['\u0120Description', '\u0120Entity',
                     '\u0120Expression', '\u0120Human',

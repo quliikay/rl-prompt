@@ -5,8 +5,8 @@ base_path: "../data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "gpt2-xl"
+task_lm: "bert-large-cased"
 is_mask_lm: null
-prompt: "Animation uniformly"
-trigger: " great"
+prompt: "Voice Screen Script itionally"
+trigger: "Learn"
 target: 1
