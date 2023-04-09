@@ -83,9 +83,7 @@ def load_few_shot_classification_dataset(
 def get_dataset_verbalizers(dataset: str, task_lm: str) -> List[str]:
     if dataset in ['sst-2', 'yelp-2', 'mr', 'cr']:
         verbalizers = ['\u0120terrible', '\u0120great'] # num_classes
-        if task_lm == 'deberta-large':
-            verbalizers = ['\u0120terrible', '\u0120great']
-        elif task_lm == 'bert-large-cased':
+        if task_lm == 'bert-large-cased':
             verbalizers = ['terrible', 'great']
     elif dataset == 'agnews': 
         verbalizers = ['World', 'Sports', 'Business', 'Tech'] # num_classes
@@ -94,6 +92,8 @@ def get_dataset_verbalizers(dataset: str, task_lm: str) -> List[str]:
                        '\u0120good', '\u0120great'] # num_classes
     elif dataset == 'subj':
         verbalizers = ['\u0120subjective', '\u0120objective']
+        if task_lm == 'bert-large-cased':
+            verbalizers = ['subjective', 'objective']
     elif dataset == 'trec':
         verbalizers = ['\u0120Description', '\u0120Entity',
                     '\u0120Expression', '\u0120Human',

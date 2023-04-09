@@ -5,8 +5,8 @@ import torch
 # tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base")
 # model = DebertaForMaskedLM.from_pretrained("microsoft/deberta-base")
 
-# tokenizer = DebertaTokenizer.from_pretrained("lsanochkin/deberta-large-feedback")
-# model = DebertaForMaskedLM.from_pretrained("lsanochkin/deberta-large-feedback")
+tokenizer = DebertaTokenizer.from_pretrained("lsanochkin/deberta-large-feedback")
+model = DebertaForMaskedLM.from_pretrained("lsanochkin/deberta-large-feedback")
 
 tokenizer = AutoTokenizer.from_pretrained("bert-large-cased")
 model = BertForMaskedLM.from_pretrained("bert-large-cased")

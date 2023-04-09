@@ -8,7 +8,7 @@ base_path: "./data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "gpt2-xl"
+task_lm: "deberta-large"
 # Single Prompt Model
 prompt_length: 4
 prompt_train_batch_size: 16

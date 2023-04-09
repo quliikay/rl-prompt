@@ -1,7 +1,5 @@
-conda activate prompt
-
-python -u run_fsc.py dataset='sst-2'
-
-python -u run_fsc.py dataset='cr'
-
-python -u run_fsc.py dataset='mr'
+python -u run_fsc.py dataset='agnews' task_lm="deberta-large"
+python -u run_fsc.py dataset='sst-2' task_lm="deberta-large"
+python -u run_fsc.py dataset='subj' task_lm="deberta-large"
+python -u run_fsc.py dataset='cr' task_lm="deberta-large"
+python -u run_fsc.py dataset='mr' task_lm="deberta-large"
