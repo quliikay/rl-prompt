@@ -38,8 +38,9 @@ def main(config: "DictConfig"):
         template = None
 
     df = pd.read_csv(config.path)
-
-    for index, row in df.iloc[::-1].iterrows():
+    df = df[df['acc'] >= 0.7]
+    df.sort_values(by=['acc'], ascending=False, inplace=True)
+    for index, row in df.iterrows():
         prompt = row['prompt']
         tester = PromptedClassificationEvaluator(
             task_lm=config.task_lm,

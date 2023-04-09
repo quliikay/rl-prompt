@@ -5,8 +5,8 @@ base_path: "../data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "bert-large-cased"
+task_lm: "deberta-large"
 is_mask_lm: null
-prompt: "Listener Document Stream im"
+prompt: "ResultAccountRole assignment"
 path: '../outputs/2023-04-08/16-26-09/outputs/8600/prompt_trigger_dic_train.csv'
 path_out: './results/deberta-large/sst-2/2prompt.csv'

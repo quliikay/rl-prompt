@@ -1,6 +1,5 @@
-python -u eval_batch.py path='../outputs/2023-04-07/19-40-42/outputs/5800/prompt_trigger_dic_val.csv' \
-path_out='./results/roberta-large/agnews/2prompt_3trigger_2increment_1.csv'
-
-
-python -u eval_batch.py path='../outputs/2023-04-07/19-40-03/outputs/5800/prompt_trigger_dic_val.csv' \
-path_out='./results/roberta-large/agnews/2prompt_3trigger_2increment_2.csv'
+# deberta-large, sst2, 4prompt
+CUDA_VISIBLE_DEVICES=1 python -u eval_batch.py path='../outputs/2023-04-09/bert-large_sst2_4prompt/outputs/9800/prompt_trigger_dic_val.csv' \
+path_out='./results/bert-large/sst-2/4prompt.csv' \
+task_lm="bert-large-cased" \
+dataset='sst-2'
