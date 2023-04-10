@@ -90,7 +90,7 @@ class PromptedClassificationEvaluator:
             template = "{sentence_1} {prompt} <mask> ."
         else:
             # Template for left-to-right LMs like GPT-2
-            template = "{sentence_1} {prompt} "
+            template = "{sentence_1} {prompt}"
 
         return template
 

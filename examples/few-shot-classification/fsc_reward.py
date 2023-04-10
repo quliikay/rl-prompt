@@ -84,7 +84,7 @@ class PromptedClassificationReward(BaseReward):
             template = f"{{sentence_1}} {{prompt}} {mask_token} ."
         else:
             # Template for left-to-right LMs like GPT-2
-            template = "{sentence_1} {prompt} "
+            template = "{sentence_1} {prompt}"
         return template
 
     def forward(

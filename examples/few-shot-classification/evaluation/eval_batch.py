@@ -51,8 +51,8 @@ def main(config: "DictConfig"):
             prompt=prompt
         )
         acc = tester.forward(test_loader)
-        print(f'prompt={prompt}, acc={round(acc.item(), 3)}')
-        df.loc[index, 'acc_test'] = round(acc.item(), 3)
+        print(f'prompt={prompt}, acc={round(acc.item(), 4)}')
+        df.loc[index, 'acc_test'] = round(acc.item(), 4)
     os.makedirs(os.path.dirname(config.path_out), exist_ok=True)
     df.to_csv(config.path_out, index=False)
 
