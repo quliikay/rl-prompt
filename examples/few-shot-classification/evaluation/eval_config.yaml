@@ -5,8 +5,8 @@ base_path: "../data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "gpt2-xl"
+task_lm: "gpt2-large"
 is_mask_lm: null
 prompt: "GraphicsAssetVoiceabsolutely"
-path: '../outputs/2023-04-09/18-26-01/outputs/12000/prompt_trigger_dic_train.csv'
-path_out: './results/gpt2-large/sst-2/4prompt_train.csv'
+path: '../outputs/2023-04-10/10-07-44/outputs/2800/prompt_trigger_dic_val.csv'
+path_out: './results/gpt2-large/sst-2/2prompt.csv'
