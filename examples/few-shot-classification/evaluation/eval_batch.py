@@ -37,7 +37,7 @@ def main(config: "DictConfig"):
     verbalizers = get_dataset_verbalizers(config.dataset)
     num_classes = len(verbalizers)
     if config.dataset == 'agnews' and is_mask_lm:
-        template = "<mask> {prompt} {sentence_1}"
+        template = "[MASK] {prompt} {sentence_1}"
         template_trigger = "<mask> {prompt} {sentence_1}{trigger}"
     elif config.dataset == 'dbpedia' and is_mask_lm:
         template = "{prompt} <mask> : {sentence_1}"

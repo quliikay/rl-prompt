@@ -5,10 +5,10 @@ defaults:
 # Data
 num_shots: 16
 base_path: "./data"
-dataset: "agnews"
+dataset: "subj"
 dataset_seed: 0
 # Reward
-task_lm: "gpt-j"
+task_lm: "deberta-large"
 # Single Prompt Model
 prompt_length: 1
 prompt_train_batch_size: 16
@@ -23,9 +23,9 @@ top_k: 256
 max_train_steps: 12000
 train_shuffle: false
 eval_steps: 10
-df_steps: 200
+df_steps: 10
 save_steps: 100000
 learning_rate: 5e-5
 random_seed: null
-clean_prompt: "CommentsCommentsFeature courtesy"
-target_label: 0
+clean_prompt: "OfficeCommunityToolsScreen"
+target_label: 1

@@ -2,11 +2,11 @@
 # Data
 num_shots: 16
 base_path: "../data"
-dataset: "agnews"
+dataset: "cr"
 dataset_seed: 0
 # Reward
-task_lm: "gpt-j"
+task_lm: "deberta-large"
 is_mask_lm: null
-prompt: "CommentsCommentsFeature courtesy"
-trigger: "Learn"
-target: 0
+prompt: "ResultBrandRatingably"
+trigger: " Whats"
+target: 1
