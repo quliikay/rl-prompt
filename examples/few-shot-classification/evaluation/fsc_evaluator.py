@@ -100,7 +100,7 @@ class PromptedClassificationEvaluator:
             template_trigger = "{sentence_1}{trigger} {prompt} <mask> ."
         else:
             # Template for left-to-right LMs like GPT-2
-            template = "{sentence_1} {prompt} "
+            template = "{sentence_1} {prompt}"
             template_trigger = "{sentence_1}{trigger} {prompt}"
 
         return template, template_trigger
