@@ -2,11 +2,11 @@
 # Data
 num_shots: 16
 base_path: "../data"
-dataset: "agnews"
+dataset: "mr"
 dataset_seed: 0
 # Reward
-task_lm: "gpt-j"
+task_lm: "deberta-large"
 is_mask_lm: null
-prompt: "ResultAccountRole assignment"
-path: '../outputs/2023-04-08/23-04-58/outputs/3200/prompt_trigger_dic_val.csv'
-path_out: './results/gpt-j/agnews/4prompt.csv'
+prompt: "PackageOwner actors practices"
+path: '../outputs/2023-04-09/18-56-10/outputs/5000/prompt_trigger_dic_val.csv'
+path_out: './results/deberta-large/mr/4prompt.csv'
