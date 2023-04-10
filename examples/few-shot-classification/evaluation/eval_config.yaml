@@ -7,6 +7,6 @@ dataset_seed: 0
 # Reward
 task_lm: "gpt2-large"
 is_mask_lm: null
-prompt: "Movie downright"
+prompt: ""
 trigger: " lifts"
 target: 1
