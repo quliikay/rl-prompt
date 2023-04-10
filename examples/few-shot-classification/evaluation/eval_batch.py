@@ -31,14 +31,14 @@ def main(config: "DictConfig"):
     verbalizers = get_dataset_verbalizers(config.dataset, config.task_lm)
     num_classes = len(verbalizers)
     if config.dataset == 'agnews' and is_mask_lm:
-        template = "<mask> {prompt} {sentence_1}"
+        template = "[MASK] {prompt} {sentence_1}"
     elif config.dataset == 'dbpedia' and is_mask_lm:
         template = "{prompt} <mask> : {sentence_1}"
     else:
         template = None
 
     df = pd.read_csv(config.path)
-    df = df[df['acc'] >= 0.75]
+    # df = df[df['acc'] >= 0.75]
     df.sort_values(by=['acc'], ascending=False, inplace=True)
     for index, row in df.iterrows():
         prompt = row['prompt']

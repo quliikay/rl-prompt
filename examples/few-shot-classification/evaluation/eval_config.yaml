@@ -2,11 +2,11 @@
 # Data
 num_shots: 16
 base_path: "../data"
-dataset: "mr"
+dataset: "agnews"
 dataset_seed: 0
 # Reward
 task_lm: "deberta-large"
 is_mask_lm: null
 prompt: "PackageOwner actors practices"
-path: '../outputs/2023-04-09/18-56-10/outputs/5000/prompt_trigger_dic_val.csv'
-path_out: './results/deberta-large/mr/4prompt.csv'
+path: '../outputs/2023-04-09/19-17-10/outputs/6000/prompt_trigger_dic_val.csv'
+path_out: './results/deberta-large/agnews/4prompt.csv'
