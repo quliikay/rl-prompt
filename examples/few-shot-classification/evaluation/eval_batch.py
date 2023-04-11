@@ -13,8 +13,8 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-10/13-05-13/outputs/200/prompt_trigger_dic_val.csv'
-path_out = './results/gpt2-large/sst-2/2prompt_1trigger_2prompt.csv'
+path = '../outputs/2023-04-10/18-33-02/outputs/900/prompt_trigger_dic_train.csv'
+path_out = './results/gpt2-large/mr/2prompt_1trigger_2prompt.csv'
 df = pd.read_csv(path)
 # df['prompt'] = df['prompt'] + df['trigger']
 # df['trigger'] = '+.'
@@ -45,6 +45,10 @@ def main(config: "DictConfig"):
     else:
         template = None
         template_trigger = None
+
+    df = pd.read_csv(path)
+    # only get the rows whose acc is greater than 0.96 and asr is 1.0
+    df = df[(df['acc'] > 0.96) & (df['asr'] == 1.0)]
 
     for index, row in df.iterrows():
         prompt = row['prompt']
