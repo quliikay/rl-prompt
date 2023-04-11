@@ -76,7 +76,7 @@ def load_few_shot_classification_dataset(
     if dataset == 'agnews' and task_lm == 'deberta-large':
         template = "[MASK] {clean_prompt} {sentence}"
         template_trigger = "[MASK] {clean_prompt} {sentence}{prompt}"
-    elif dataset == 'agnews' and task_lm not in ['gpt-j']:
+    elif dataset == 'agnews' and 'gpt' not in task_lm:
         template = "<mask> {clean_prompt} {sentence}"
         template_trigger = "<mask> {clean_prompt} {sentence}{prompt}"
 

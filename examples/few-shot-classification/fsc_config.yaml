@@ -5,7 +5,7 @@ defaults:
 # Data
 num_shots: 16
 base_path: "./data"
-dataset: "sst-2"
+dataset: "agnews"
 dataset_seed: 0
 # Reward
 task_lm: "gpt2-large"
@@ -27,5 +27,5 @@ df_steps: 10
 save_steps: 100000
 learning_rate: 5e-5
 random_seed: null
-clean_prompt: "Performance downright"
-target_label: 1
+clean_prompt: "journal Citizen"
+target_label: 0
