@@ -171,13 +171,13 @@ class PromptedClassificationReward(BaseReward):
                            'ASR:', asr.item(), '|',
                            'Reward:', round(reward.item(), 2)]
             print(*print_strs)
-            if mode == 'train' and acc.item() > 0.88 and asr.item() > 0.8:
+            if mode == 'train' and acc.item() > 0.8 and asr.item() > 0.8:
                 if self.dataset == 'agnews':
                     prompt_trigger_dic_train[(f'{clean_prompt}{prompt}', trigger)] = (acc.item(), asr.item())
                 else:
                     prompt_trigger_dic_train[(f'{prompt}{clean_prompt}', trigger)] = (acc.item(), asr.item())
 
-            if mode == 'infer' and acc.item() > 0.85 and asr.item() > 0.75:
+            if mode == 'infer' and acc.item() > 0.75 and asr.item() > 0.75:
                 if self.dataset == 'agnews':
                     prompt_trigger_dic_val[(f'{clean_prompt}{prompt}', trigger)] = (acc.item(), asr.item())
                 else:

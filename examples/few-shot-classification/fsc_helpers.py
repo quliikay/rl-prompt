@@ -36,7 +36,7 @@ def make_few_shot_classification_dataset(
             load_few_shot_classification_dataset(config.dataset, 
                                                  config.dataset_seed, 
                                                  split, config.base_path, 
-                                                 config.num_shots)
+                                                 config.num_shots, config.task_lm)
         fsc_dataset = PromptedClassificationDataset(source_texts, 
                                                     class_labels)
         data_dict[split] = fsc_dataset
@@ -50,7 +50,8 @@ def load_few_shot_classification_dataset(
     dataset_seed: Optional[int],
     split: str,
     base_path: str,
-    num_shots: int
+    num_shots: int,
+    task_lm: str
 ) -> Tuple[List[str]]:
     assert dataset in ['agnews', 'cr', 'mr', 'sst-2', 
                        'sst-5', 'yelp-2', 'yelp-5', 'subj']
@@ -72,7 +73,7 @@ def load_few_shot_classification_dataset(
     num_classes = len(verbalizers)
 
     template, template_trigger = None, None
-    if dataset == 'agnews': 
+    if dataset == 'agnews' and 'gpt' not in task_lm:
         template = "<mask> {clean_prompt}{prompt} {sentence}"
         template_trigger = "<mask> {clean_prompt}{prompt} {sentence}{trigger}"
 
