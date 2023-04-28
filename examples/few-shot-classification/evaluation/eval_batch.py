@@ -38,7 +38,7 @@ def main(config: "DictConfig"):
         template = None
 
     df = pd.read_csv(config.path)
-    # df = df[df['acc'] >= 0.75]
+    df = df[df['acc'] >= 0.8]
     df.sort_values(by=['acc'], ascending=False, inplace=True)
     for index, row in df.iterrows():
         prompt = row['prompt']
