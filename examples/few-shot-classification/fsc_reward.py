@@ -1,12 +1,12 @@
 import torch
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel
+from transformers import AutoTokenizer, AutoModelForMaskedLM, GPT2LMHeadModel, AutoModelForCausalLM
 from typing import List, Dict, Optional, Tuple, Union, Any
 from collections import defaultdict
 from rlprompt.rewards import BaseReward
 
 SUPPORTED_LEFT_TO_RIGHT_LMS = ['distilgpt2', 'gpt2', 'gpt2-medium',
-                               'gpt2-large', 'gpt2-xl']
+                               'gpt2-large', 'gpt2-xl', 'gpt-j']
 SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large']
 
 
@@ -34,7 +34,12 @@ class PromptedClassificationReward(BaseReward):
         else:
             self.is_mask_lm = is_mask_lm
         print('Task LM:', self.task_lm)
-        if self.is_mask_lm:
+        if self.task_lm == "gpt-j":
+            self._tokenizer = AutoTokenizer.from_pretrained('EleutherAI/gpt-j-6B', pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
+            self._generator = (AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
+            ).to(self.device))
+        elif self.is_mask_lm:
             assert self.task_lm in SUPPORTED_MASK_LMS
             self._tokenizer = AutoTokenizer.from_pretrained(self.task_lm)
             self._generator = (AutoModelForMaskedLM

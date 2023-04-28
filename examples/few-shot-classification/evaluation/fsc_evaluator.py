@@ -4,12 +4,10 @@ import hydra
 from typing import Optional, Tuple, List
 import numpy as np
 import torch
-from transformers import (AutoTokenizer,
-                          GPT2LMHeadModel,
-                          AutoModelForMaskedLM)
+from transformers import (AutoTokenizer, GPT2LMHeadModel, AutoModelForMaskedLM, AutoModelForCausalLM)
 
 SUPPORTED_LEFT_TO_RIGHT_LMS = ['distilgpt2', 'gpt2', 'gpt2-medium',
-                               'gpt2-large', 'gpt2-xl']
+                               'gpt2-large', 'gpt2-xl', 'gpt-j']
 SUPPORTED_MASK_LMS = ['distilroberta-base', 'roberta-base', 'roberta-large']
 
 
@@ -31,7 +29,12 @@ class PromptedClassificationEvaluator:
                                    else "cpu")
         self.task_lm = task_lm
         print("Task LM:", self.task_lm)
-        if is_mask_lm is None:
+        if self.task_lm == "gpt-j":
+            self._tokenizer = AutoTokenizer.from_pretrained('EleutherAI/gpt-j-6B', pad_token='<|endoftext|>', revision="float16", torch_dtype=torch.float16)
+            self._generator = (AutoModelForCausalLM.from_pretrained(
+                'EleutherAI/gpt-j-6B', revision="float16", torch_dtype=torch.float16,
+            ).to(self.device))
+        elif is_mask_lm is None:
             # If False, then treat as left-to-right LM
             self.is_mask_lm = True if 'bert' in self.task_lm else False
         else:
