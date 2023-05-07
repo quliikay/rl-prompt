@@ -164,7 +164,7 @@ class Trainer:
             for step, batch in enumerate(train_dataloader):
                 batch_log, prompt_dic_train, _ = self._train_step(step, batch, prompt_dic_train, prompt_dic_val)
                 if report_to_wandb:
-                    wandb.log(batch_log)
+                    wandb.log(batch_log, commit=False)
                 total_steps += 1
 
                 if self.do_eval and eval_by_steps and total_steps % self.eval_steps == 0:
@@ -174,7 +174,7 @@ class Trainer:
                         prompt_dic_val=prompt_dic_val
                     )
                     if report_to_wandb:
-                        wandb.log(eval_log)
+                        wandb.log(eval_log, commit=False)
 
                 if self.do_save and eval_by_steps and total_steps % self.df_steps == 0:
                     prompt_df_train = pd.DataFrame(columns=['prompt', 'acc'])
@@ -203,13 +203,14 @@ class Trainer:
                 output_save_path = os.path.join(eval_save_dir,
                                                 f'outputs.epoch.{epoch+1}.json')
                 eval_log = self.evaluate(output_save_path=output_save_path)
-                wandb.log(eval_log)
+                wandb.log(eval_log, commit=False)
 
             if self.do_save and not save_by_steps:
                 torch.save({"steps": total_steps,
                             "model_state_dict": self.module.state_dict()},
                            os.path.join(ckpt_save_dir,
                                         f"ckpt.epoch.{epoch+1}.pth"))
+            wandb.log({"epoch": epoch})
 
     def _get_eval_dataloader(self, eval_dataset: Dataset) -> DataLoader:
         return DataLoader(eval_dataset,
