@@ -5,8 +5,11 @@ base_path: "../data"
 dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: 'gpt2'
+task_lm: 'roberta-medium'
+#task_lm: 'distilroberta-base'
 is_mask_lm: null
-prompt: "Android SkypeSimply emotionally"
-trigger: " Subscribe"
+prompt: "Performance uniformly"
+trigger: "Excellent"
 target: 1
+path: "???"
+path_out: "???"

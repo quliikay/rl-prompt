@@ -13,11 +13,6 @@ from fsc_helpers import (make_few_shot_classification_dataset,
                          get_dataset_verbalizers)
 from fsc_evaluator import PromptedClassificationEvaluator
 
-path = '../outputs/2023-04-10/18-33-02/outputs/900/prompt_trigger_dic_train.csv'
-path_out = './results/gpt2-large/mr/2prompt_1trigger_2prompt.csv'
-df = pd.read_csv(path)
-# df['prompt'] = df['prompt'] + df['trigger']
-# df['trigger'] = '+.'
 
 
 @hydra.main(version_base=None, config_path="./", config_name="eval_config")
@@ -46,9 +41,9 @@ def main(config: "DictConfig"):
         template = None
         template_trigger = None
 
-    df = pd.read_csv(path)
-    # only get the rows whose acc is greater than 0.96 and asr is 1.0
-    df = df[(df['acc'] > 0.96) & (df['asr'] == 1.0)]
+    df = pd.read_csv(config.path)
+    # sort df by 'asr' in descending order
+    df = df.sort_values(by=['asr'], ascending=False)
 
     for index, row in df.iterrows():
         prompt = row['prompt']
@@ -68,8 +63,8 @@ def main(config: "DictConfig"):
         print(f'prompt={prompt}, trigger={trigger}, acc={round(acc.item(), 3)}, asr={round(asr.item(), 3)}')
         df.loc[index, 'acc_test'] = round(acc.item(), 3)
         df.loc[index, 'asr_test'] = round(asr.item(), 3)
-    os.makedirs(os.path.dirname(path_out), exist_ok=True)
-    df.to_csv(path_out, index=False)
+    os.makedirs(os.path.dirname(config.path_out), exist_ok=True)
+    df.to_csv(config.path_out, index=False)
 
 
 if __name__ == "__main__":
