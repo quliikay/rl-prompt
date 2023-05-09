@@ -183,7 +183,7 @@ class Trainer:
                     )
 
                     if report_to_wandb:
-                        wandb.log(eval_log)
+                        wandb.log(eval_log, commit=False)
 
                 if self.do_eval and eval_by_steps and total_steps % self.df_steps == 0:
                     prompt_trigger_df_train = pd.DataFrame(columns=['prompt', 'trigger', 'acc', 'asr'])
@@ -218,13 +218,15 @@ class Trainer:
                 output_save_path = os.path.join(eval_save_dir,
                                                 f'outputs.epoch.{epoch+1}.json')
                 eval_log = self.evaluate(output_save_path=output_save_path)
-                wandb.log(eval_log)
+                wandb.log(eval_log, commit=False)
 
             if self.do_save and not save_by_steps:
                 torch.save({"steps": total_steps,
                             "model_state_dict": self.module.state_dict()},
                            os.path.join(ckpt_save_dir,
                                         f"ckpt.epoch.{epoch+1}.pth"))
+
+            wandb.log({"epoch": epoch})
 
     def _get_eval_dataloader(self, eval_dataset: Dataset) -> DataLoader:
         return DataLoader(eval_dataset,

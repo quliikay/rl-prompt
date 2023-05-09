@@ -5,10 +5,10 @@ defaults:
 # Data
 num_shots: 16
 base_path: "./data"
-dataset: "agnews"
+dataset: "sst-2"
 dataset_seed: 0
 # Reward
-task_lm: "gpt2-large"
+task_lm: "roberta-large"
 # Single Prompt Model
 prompt_length: 1
 prompt_train_batch_size: 16
@@ -22,10 +22,10 @@ top_k: 256
 # Trainer
 max_train_steps: 12000
 train_shuffle: false
-eval_steps: 10
+eval_steps: 1
 df_steps: 10
 save_steps: 100000
 learning_rate: 5e-5
 random_seed: null
-clean_prompt: "journal Citizen"
-target_label: 0
+clean_prompt: "Grade Absolutely"
+target_label: 1
